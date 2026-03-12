@@ -1824,39 +1824,120 @@ html, body {
   color: var(--text-primary);
 }
 </style>
+
 <style>
-/* ═══════════════════════════════════════════════════════════════
-   CINEMATIC INTRO
-═══════════════════════════════════════════════════════════════ */
+/* ══════════════════════════════════════════════════════════
+   CINEMATIC ATMOSPHERE
+══════════════════════════════════════════════════════════ */
+
+/* Animated scanlines over entire page */
+body::before {
+  content: '';
+  position: fixed; inset: 0; z-index: 50000;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0px, transparent 3px,
+    rgba(0,0,0,0.032) 3px, rgba(0,0,0,0.032) 4px
+  );
+  pointer-events: none;
+  animation: scanShift 14s linear infinite;
+}
+@keyframes scanShift {
+  0%   { background-position: 0 0; }
+  100% { background-position: 0 80px; }
+}
+
+/* Dust canvas */
+#dust-canvas {
+  position: fixed; inset: 0; z-index: 49999;
+  pointer-events: none; opacity: 0.48;
+}
+
+/* Random film scratch */
+#film-scratch {
+  position: fixed; top: 0; width: 1.5px; height: 100vh;
+  z-index: 51000; pointer-events: none; opacity: 0;
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    rgba(255,255,255,0.8) 25%,
+    rgba(255,255,255,0.3) 75%,
+    transparent
+  );
+  transition: opacity 0.06s;
+}
+
+/* Animated vignette on active slide */
+.slide.active::after {
+  content: '';
+  position: absolute; inset: 0; pointer-events: none; z-index: 1;
+  background: radial-gradient(
+    ellipse 86% 86% at 50% 50%,
+    transparent 52%,
+    rgba(0,0,0,0.52) 100%
+  );
+  animation: vigPulse 9s ease-in-out infinite;
+}
+@keyframes vigPulse {
+  0%, 100% { opacity: 0.52; }
+  50%      { opacity: 1;    }
+}
+
+/* Film-burn transitions */
+@keyframes burnOut {
+  0%   { opacity: 1;   filter: brightness(1)   sepia(0); }
+  45%  { opacity: 0.4; filter: brightness(2.8)  sepia(0.85); }
+  100% { opacity: 0;   filter: brightness(0)   sepia(0); }
+}
+@keyframes burnIn {
+  0%   { opacity: 0;   filter: brightness(3.5) sepia(0.9); }
+  35%  { opacity: 0.6; filter: brightness(1.5) sepia(0.15); }
+  100% { opacity: 1;   filter: brightness(1)   sepia(0); }
+}
+.slide.burning-out { animation: burnOut 0.38s ease-out forwards; pointer-events: none; }
+.slide.burning-in  { animation: burnIn  0.48s ease-out forwards; }
+
+/* ══════════════════════════════════════════════════════════
+   CURSOR — must be above intro overlay
+══════════════════════════════════════════════════════════ */
+.cursor      { z-index: 200000 !important; }
+.cursor-ring { z-index: 199999 !important; }
+
+/* ══════════════════════════════════════════════════════════
+   CINEMATIC INTRO OVERLAY
+══════════════════════════════════════════════════════════ */
 #mf-intro {
   position: fixed; inset: 0; z-index: 99999;
   background: #000;
   display: flex; align-items: center; justify-content: center;
   flex-direction: column;
   overflow: hidden;
+  cursor: none; /* custom cursor handles pointer */
 }
+
+/* Grain on intro */
 #mf-intro::after {
   content: '';
   position: absolute; inset: 0; pointer-events: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   opacity: 0.055;
   animation: introGrain 0.35s steps(2) infinite;
 }
 @keyframes introGrain {
-  0%  { transform: translate(0,0); }
-  25% { transform: translate(-2px, 1px); }
-  50% { transform: translate(1px,-2px); }
-  75% { transform: translate(2px, 1px); }
+  0%   { transform: translate(0, 0); }
+  25%  { transform: translate(-2px, 1px); }
+  50%  { transform: translate(1px, -2px); }
+  75%  { transform: translate(2px, 1px); }
 }
 
-/* Sprocket holes */
+/* Sprocket strips */
 .intro-sprocket {
   position: absolute; top: 0; bottom: 0; width: 60px;
   display: flex; flex-direction: column;
   justify-content: space-around; align-items: center;
   padding: 20px 0; z-index: 2; pointer-events: none;
 }
-.intro-sprocket.left  { left:  0; border-right: 1.5px solid rgba(255,255,255,0.07); }
+.intro-sprocket.left  { left: 0;  border-right: 1.5px solid rgba(255,255,255,0.07); }
 .intro-sprocket.right { right: 0; border-left:  1.5px solid rgba(255,255,255,0.07); }
 .sprocket-hole {
   width: 26px; height: 18px; border-radius: 4px;
@@ -1878,46 +1959,6 @@ html, body {
   opacity: 0; pointer-events: none; z-index: 15;
 }
 
-/* Countdown stage */
-#intro-countdown {
-  position: relative; z-index: 10;
-  display: flex; align-items: center; justify-content: center;
-}
-#cd-svg { width: 210px; height: 210px; }
-#cd-number {
-  position: absolute;
-  font-family: 'Playfair Display', serif;
-  font-size: 108px; font-weight: 700;
-  color: rgba(255,255,255,0.9);
-  text-align: center;
-  line-height: 1;
-  text-shadow: 0 0 60px rgba(255,255,255,0.25);
-  animation: filmShake 0.12s steps(1) infinite;
-}
-@keyframes filmShake {
-  0%   { transform: translate(0,0) rotate(0deg); }
-  20%  { transform: translate(-1px,1px) rotate(-0.3deg); }
-  40%  { transform: translate(1px,-1px) rotate(0.2deg); }
-  60%  { transform: translate(-1px,0) rotate(0.1deg); }
-  80%  { transform: translate(1px,1px) rotate(-0.1deg); }
-  100% { transform: translate(0,0) rotate(0deg); }
-}
-/* Crosshair lines */
-.cd-cross {
-  position: absolute; background: rgba(255,255,255,0.15);
-}
-.cd-cross.h { width: 230px; height: 1px; top:50%; left:50%; transform:translate(-50%,-50%); }
-.cd-cross.v { width: 1px; height: 230px; top:50%; left:50%; transform:translate(-50%,-50%); }
-/* Corner brackets */
-.cd-corner {
-  position: absolute; width: 20px; height: 20px;
-  border-color: rgba(255,255,255,0.25); border-style: solid;
-}
-.cd-corner.tl { top:-6px; left:-6px;  border-width: 1px 0 0 1px; }
-.cd-corner.tr { top:-6px; right:-6px; border-width: 1px 1px 0 0; }
-.cd-corner.bl { bottom:-6px; left:-6px;  border-width: 0 0 1px 1px; }
-.cd-corner.br { bottom:-6px; right:-6px; border-width: 0 1px 1px 0; }
-
 /* Cue mark */
 #cue-mark {
   position: absolute; top: 82px; right: 68px;
@@ -1928,149 +1969,235 @@ html, body {
   transition: opacity 0.06s;
 }
 
-/* Frame info text (film-style) */
+/* Film frame info */
 .intro-frame-info {
   position: absolute; bottom: 86px; z-index: 10;
   font-family: 'Courier New', monospace; font-size: 11px;
-  color: rgba(255,255,255,0.2); letter-spacing: 3px;
+  color: rgba(255,255,255,0.18); letter-spacing: 3px;
   pointer-events: none;
 }
 
-/* Brand reveal */
+/* ══ GATE: click to start ══ */
+#intro-gate {
+  position: absolute; inset: 0; z-index: 20;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 0;
+  transition: opacity 0.5s;
+}
+#gate-eyebrow {
+  font-family: 'Inter', sans-serif;
+  font-size: 10px; font-weight: 600; letter-spacing: 10px;
+  text-transform: uppercase; color: rgba(255,255,255,0.18);
+  margin-bottom: 28px;
+}
+#gate-main-title {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(42px, 7vw, 86px);
+  font-weight: 600; line-height: 1; letter-spacing: -0.02em;
+  text-align: center; margin-bottom: 64px;
+}
+#gate-welcome {
+  display: block;
+  font-size: 0.42em; font-weight: 400; font-style: italic;
+  letter-spacing: 0.1em;
+  color: rgba(255,255,255,0.35);
+  font-family: 'Cormorant Garamond', serif;
+  margin-bottom: 8px;
+}
+#gate-title-text {
+  display: block;
+  background: linear-gradient(135deg, #F4E4BC 0%, #D4AF37 50%, #B8860B 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+  filter: drop-shadow(0 0 60px rgba(212,175,55,0.4));
+}
+#gate-click-btn {
+  display: flex; flex-direction: column; align-items: center; gap: 18px;
+  cursor: pointer;
+  animation: gatePulse 2.5s ease-in-out infinite;
+  background: none; border: none; padding: 0;
+}
+@keyframes gatePulse {
+  0%, 100% { opacity: 0.45; transform: scale(1); }
+  50%      { opacity: 1;    transform: scale(1.05); }
+}
+#gate-ring {
+  width: 78px; height: 78px; border-radius: 50%;
+  border: 1px solid rgba(212,175,55,0.5);
+  display: flex; align-items: center; justify-content: center;
+  position: relative;
+}
+#gate-ring::before {
+  content: ''; position: absolute; inset: -10px; border-radius: 50%;
+  border: 1px solid rgba(212,175,55,0.18);
+  animation: gateExpand 2.5s ease-out infinite;
+}
+@keyframes gateExpand {
+  0%   { transform: scale(1);   opacity: 0.7; }
+  100% { transform: scale(1.7); opacity: 0; }
+}
+#gate-play {
+  width: 0; height: 0;
+  border-top: 13px solid transparent;
+  border-bottom: 13px solid transparent;
+  border-left: 22px solid rgba(212,175,55,0.85);
+  margin-left: 5px;
+}
+#gate-label {
+  font-family: 'Inter', sans-serif; font-size: 10px;
+  font-weight: 600; letter-spacing: 5px; text-transform: uppercase;
+  color: rgba(255,255,255,0.28);
+}
+#gate-sublabel {
+  font-family: 'Cormorant Garamond', serif; font-size: 13px;
+  font-style: italic; color: rgba(255,255,255,0.14); margin-top: -6px;
+}
+
+/* ══ COUNTDOWN ══ */
+#intro-countdown {
+  position: absolute; inset: 0; z-index: 11;
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.4s ease;
+}
+#cd-wrap { position: relative; display: flex; align-items: center; justify-content: center; }
+#cd-svg  { width: 210px; height: 210px; }
+#cd-number {
+  position: absolute;
+  font-family: 'Playfair Display', serif;
+  font-size: 108px; font-weight: 700;
+  color: rgba(255,255,255,0.9); line-height: 1;
+  text-shadow: 0 0 60px rgba(255,255,255,0.25);
+  animation: filmShake 0.12s steps(1) infinite;
+}
+@keyframes filmShake {
+  0%   { transform: translate(0,0) rotate(0deg); }
+  20%  { transform: translate(-1px,1px) rotate(-0.3deg); }
+  40%  { transform: translate(1px,-1px) rotate(0.2deg); }
+  60%  { transform: translate(-1px,0) rotate(0.1deg); }
+  80%  { transform: translate(1px,1px) rotate(-0.1deg); }
+}
+.cd-cross { position: absolute; background: rgba(255,255,255,0.15); }
+.cd-cross.h { width: 230px; height: 1px; top:50%; left:50%; transform:translate(-50%,-50%); }
+.cd-cross.v { width: 1px; height: 230px; top:50%; left:50%; transform:translate(-50%,-50%); }
+.cd-corner { position: absolute; width: 20px; height: 20px; border-color: rgba(255,255,255,0.28); border-style: solid; }
+.cd-corner.tl { top:-8px;    left:-8px;    border-width:1px 0 0 1px; }
+.cd-corner.tr { top:-8px;    right:-8px;   border-width:1px 1px 0 0; }
+.cd-corner.bl { bottom:-8px; left:-8px;    border-width:0 0 1px 1px; }
+.cd-corner.br { bottom:-8px; right:-8px;   border-width:0 1px 1px 0; }
+
+/* ══ BRAND REVEAL ══ */
 #intro-brand-stage {
   position: absolute; inset: 0; z-index: 12;
   display: flex; align-items: center; justify-content: center;
   flex-direction: column;
   opacity: 0; pointer-events: none;
+  transition: opacity 0s; /* opacity set by JS */
 }
-#intro-title {
+#brand-welcome {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(18px, 2.4vw, 32px);
+  font-style: italic; letter-spacing: 6px;
+  color: rgba(255,255,255,0.38);
+  margin-bottom: 10px;
+  opacity: 0; transform: translateY(10px);
+  transition: opacity 1s ease 0.2s, transform 1s ease 0.2s;
+}
+#brand-welcome.show { opacity: 1; transform: translateY(0); }
+
+#brand-title {
   font-family: 'Playfair Display', serif;
-  font-size: clamp(72px, 11vw, 148px);
-  font-weight: 600; line-height: 0.95;
+  font-size: clamp(72px, 11vw, 150px);
+  font-weight: 600; line-height: 0.92;
+  letter-spacing: -0.02em; text-align: center;
   background: linear-gradient(135deg, #F4E4BC 0%, #D4AF37 48%, #B8860B 100%);
   -webkit-background-clip: text; -webkit-text-fill-color: transparent;
   background-clip: text;
-  letter-spacing: -0.02em; text-align: center;
-  filter: drop-shadow(0 0 80px rgba(212,175,55,0.5));
-  transform: scale(0.88);
-  transition: transform 1.6s cubic-bezier(0.16,1,0.3,1);
+  filter: drop-shadow(0 0 90px rgba(212,175,55,0.55));
+  transform: scale(0.86);
+  transition: transform 1.8s cubic-bezier(0.16, 1, 0.3, 1);
 }
-#intro-title.show { transform: scale(1); }
-#intro-subtitle {
-  font-family: 'Cormorant Garamond', serif;
-  font-size: clamp(14px, 1.8vw, 22px);
-  font-style: italic; letter-spacing: 5px;
-  color: rgba(255,255,255,0.35);
-  margin-top: 20px;
-  opacity: 0; transform: translateY(12px);
-  transition: opacity 1s ease 0.5s, transform 1s ease 0.5s;
-}
-#intro-subtitle.show { opacity: 1; transform: translateY(0); }
+#brand-title.show { transform: scale(1); }
 
-/* Start button */
-#intro-cta {
-  margin-top: 60px; padding: 18px 52px;
+#brand-cta {
+  margin-top: 64px;
+  padding: 18px 56px;
   background: transparent;
   border: 1px solid rgba(212,175,55,0.5); border-radius: 2px;
   color: #D4AF37; font-family: 'Inter', sans-serif;
   font-size: 11px; font-weight: 700; letter-spacing: 6px;
   text-transform: uppercase; cursor: pointer;
   position: relative; overflow: hidden;
-  opacity: 0; transform: translateY(10px);
-  transition: all 0.6s cubic-bezier(0.16,1,0.3,1);
+  opacity: 0; transform: translateY(14px);
+  transition: opacity 0.8s ease 0s, transform 0.8s ease 0s, color 0.4s;
 }
-#intro-cta.show { opacity: 1; transform: translateY(0); }
-#intro-cta::before {
-  content: '';
-  position: absolute; inset: 0;
-  background: #D4AF37; transform: scaleX(0);
-  transform-origin: left;
+#brand-cta::before {
+  content: ''; position: absolute; inset: 0;
+  background: #D4AF37; transform: scaleX(0); transform-origin: left;
   transition: transform 0.45s cubic-bezier(0.16,1,0.3,1);
 }
-#intro-cta:hover::before  { transform: scaleX(1); }
-#intro-cta:hover          { color: #000; }
-#intro-cta span           { position: relative; z-index: 1; }
+#brand-cta:hover::before { transform: scaleX(1); }
+#brand-cta:hover         { color: #000; }
+#brand-cta span          { position: relative; z-index: 1; }
+#brand-cta.show {
+  opacity: 1; transform: translateY(0);
+  transition: opacity 0.8s ease 0s, transform 0.8s ease 0s, color 0.4s;
+}
 
-/* Fade out entire intro */
+/* Intro exit */
 #mf-intro.exit {
   opacity: 0;
-  transition: opacity 1.4s cubic-bezier(0.4,0,0.2,1);
+  transition: opacity 1.4s cubic-bezier(0.4, 0, 0.2, 1);
   pointer-events: none;
 }
 
-/* ═══════════════════════════════════════════════════════════════
-   SLIDES 7 & 8 — scrollable when content overflows
-═══════════════════════════════════════════════════════════════ */
-#s7 .slide-content,
-#s8 .slide-content {
+/* ══════════════════════════════════════════════════════════
+   SLIDE 7 — Requirements: scrollable
+══════════════════════════════════════════════════════════ */
+#s7 .slide-content {
   justify-content: flex-start !important;
-  padding-top: 72px !important;
-  padding-bottom: 40px !important;
-  overflow-y: auto !important;
-  overflow-x: hidden !important;
-  scrollbar-width: none !important;
-  -ms-overflow-style: none !important;
-  height: 100% !important;
+  padding-top: 72px !important; padding-bottom: 40px !important;
+  overflow-y: auto !important; overflow-x: hidden !important;
+  scrollbar-width: none !important; height: 100% !important;
   box-sizing: border-box !important;
 }
-#s7 .slide-content::-webkit-scrollbar,
-#s8 .slide-content::-webkit-scrollbar { display: none !important; }
+#s7 .slide-content::-webkit-scrollbar { display: none !important; }
 
-/* ═══════════════════════════════════════════════════════════════
-   REQUIREMENTS — Accordion cards
-═══════════════════════════════════════════════════════════════ */
+/* ══════════════════════════════════════════════════════════
+   REQUIREMENTS CARDS
+══════════════════════════════════════════════════════════ */
 .req-grid {
   display: grid; grid-template-columns: 1fr 1fr;
-  gap: 32px; width: 100%;
-  margin-top: 4px;
+  gap: 32px; width: 100%; margin-top: 4px;
 }
 .req-col-head {
   display: flex; align-items: center; gap: 10px;
   margin-bottom: 14px; padding-bottom: 12px;
   border-bottom: 1px solid rgba(255,255,255,0.1);
 }
-.req-col-dot {
-  width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
-}
-.dot-rf  { background: #D4AF37; box-shadow: 0 0 10px rgba(212,175,55,0.8); }
-.dot-rnf { background: #9B59B6; box-shadow: 0 0 10px rgba(155,89,182,0.8); }
-.req-col-label {
-  font-size: 10px; font-weight: 700; letter-spacing: 4px;
-  text-transform: uppercase; color: rgba(255,255,255,0.35);
-}
+.req-col-dot  { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.dot-rf       { background: #D4AF37; box-shadow: 0 0 10px rgba(212,175,55,0.8); }
+.dot-rnf      { background: #9B59B6; box-shadow: 0 0 10px rgba(155,89,182,0.8); }
+.req-col-lbl  { font-size: 10px; font-weight: 700; letter-spacing: 4px; text-transform: uppercase; color: rgba(255,255,255,0.35); }
 
-/* The card */
 .rc {
-  border-radius: 10px; margin-bottom: 7px;
-  cursor: pointer; overflow: hidden;
-  transition: box-shadow 0.3s ease;
+  border-radius: 10px; margin-bottom: 7px; cursor: pointer; overflow: hidden;
   border: 1px solid rgba(255,255,255,0.1);
+  transition: border-color 0.3s, box-shadow 0.3s, background 0.3s;
 }
 .rc.rf-card  { background: rgba(212,175,55,0.07); }
 .rc.rnf-card { background: rgba(155,89,182,0.07); }
-.rc.rf-card:hover  { border-color: rgba(212,175,55,0.45); box-shadow: 0 4px 24px rgba(212,175,55,0.12); }
-.rc.rnf-card:hover { border-color: rgba(155,89,182,0.45); box-shadow: 0 4px 24px rgba(155,89,182,0.12); }
-.rc.open.rf-card   { border-color: rgba(212,175,55,0.5);  box-shadow: 0 8px 32px rgba(212,175,55,0.15); background: rgba(212,175,55,0.1); }
-.rc.open.rnf-card  { border-color: rgba(155,89,182,0.5);  box-shadow: 0 8px 32px rgba(155,89,182,0.15); background: rgba(155,89,182,0.1); }
-
-/* Card header row */
-.rc-head {
-  display: flex; align-items: center; gap: 12px;
-  padding: 12px 14px;
-  user-select: none;
-}
+.rc.rf-card:hover,  .rc.rf-card.open  { border-color: rgba(212,175,55,0.5); box-shadow: 0 6px 28px rgba(212,175,55,0.12); background: rgba(212,175,55,0.11); }
+.rc.rnf-card:hover, .rc.rnf-card.open { border-color: rgba(155,89,182,0.5); box-shadow: 0 6px 28px rgba(155,89,182,0.12); background: rgba(155,89,182,0.11); }
+.rc-head { display: flex; align-items: center; gap: 12px; padding: 12px 14px; user-select: none; }
 .rc-badge {
-  flex-shrink: 0; min-width: 52px; height: 22px;
-  border-radius: 5px; display: flex;
-  align-items: center; justify-content: center;
+  flex-shrink: 0; min-width: 52px; height: 22px; border-radius: 5px;
+  display: flex; align-items: center; justify-content: center;
   font-size: 9px; font-weight: 800; letter-spacing: 0.5px;
 }
 .rf-card  .rc-badge { background: rgba(212,175,55,0.18); color: #D4AF37;  border: 1px solid rgba(212,175,55,0.45); }
 .rnf-card .rc-badge { background: rgba(155,89,182,0.18); color: #BB8FCE;  border: 1px solid rgba(155,89,182,0.45); }
-.rc-name {
-  flex: 1; font-size: 13px; font-weight: 600;
-  color: rgba(255,255,255,0.92); line-height: 1.3;
-}
+.rc-name { flex: 1; font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.92); line-height: 1.3; }
 .rc-arrow {
   flex-shrink: 0; width: 20px; height: 20px;
   display: flex; align-items: center; justify-content: center;
@@ -2080,217 +2207,192 @@ html, body {
 .rc.open .rc-arrow { transform: rotate(180deg); }
 .rf-card.open  .rc-arrow { color: #D4AF37; }
 .rnf-card.open .rc-arrow { color: #BB8FCE; }
-
-/* Expandable body */
-.rc-body {
-  max-height: 0; overflow: hidden;
-  transition: max-height 0.45s cubic-bezier(0.16,1,0.3,1),
-              opacity 0.3s ease;
-  opacity: 0;
-}
-.rc.open .rc-body {
-  max-height: 150px;
-  opacity: 1;
-}
-.rc-body-inner {
-  padding: 0 14px 14px;
-  border-top: 1px solid rgba(255,255,255,0.07);
-}
-.rc-body-inner p {
-  font-size: 12px; line-height: 1.7;
-  color: rgba(255,255,255,0.6);
-  margin-top: 12px;
-}
-
-/* SRS note */
-.req-srs-note {
+.rc-body { max-height: 0; overflow: hidden; opacity: 0; transition: max-height 0.45s cubic-bezier(0.16,1,0.3,1), opacity 0.3s; }
+.rc.open .rc-body { max-height: 150px; opacity: 1; }
+.rc-body-inner { padding: 0 14px 14px; border-top: 1px solid rgba(255,255,255,0.07); }
+.rc-body-inner p { font-size: 12px; line-height: 1.7; color: rgba(255,255,255,0.6); margin-top: 12px; }
+.req-note {
   margin-top: 14px; padding: 12px 16px;
-  background: linear-gradient(90deg, rgba(212,175,55,0.08), rgba(212,175,55,0));
-  border-left: 2px solid rgba(212,175,55,0.6);
-  border-radius: 0 8px 8px 0;
+  background: linear-gradient(90deg, rgba(212,175,55,0.08), transparent);
+  border-left: 2px solid rgba(212,175,55,0.6); border-radius: 0 8px 8px 0;
 }
-.req-srs-note p {
-  font-family: 'Cormorant Garamond', serif;
-  font-size: 14.5px; font-style: italic;
-  color: rgba(255,255,255,0.5); line-height: 1.6;
-}
-.req-srs-note strong { color: #D4AF37; font-style: normal; }
+.req-note p { font-family: 'Cormorant Garamond',serif; font-size: 14.5px; font-style: italic; color: rgba(255,255,255,0.5); line-height: 1.6; }
+.req-note strong { color: #D4AF37; font-style: normal; }
 
-/* ═══════════════════════════════════════════════════════════════
-   USER STORIES — Accordion cards
-═══════════════════════════════════════════════════════════════ */
-.hu-grid {
-  display: grid; grid-template-columns: repeat(3,1fr);
-  gap: 12px; width: 100%;
+/* ══════════════════════════════════════════════════════════
+   SLIDE 8 — User Stories: scrollable + larger cards
+══════════════════════════════════════════════════════════ */
+#s8 .slide-content {
+  justify-content: flex-start !important;
+  padding-top: 64px !important; padding-bottom: 40px !important;
+  overflow-y: auto !important; overflow-x: hidden !important;
+  scrollbar-width: none !important; height: 100% !important;
+  box-sizing: border-box !important;
+}
+#s8 .slide-content::-webkit-scrollbar { display: none !important; }
+
+.hu-actor-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 20px; width: 100%;
 }
 
-.hc {
-  border-radius: 14px; cursor: pointer; overflow: hidden;
+/* Actor card */
+.hac {
+  border-radius: 18px; overflow: hidden; cursor: pointer;
   border: 1px solid rgba(255,255,255,0.1);
   transition: transform 0.4s cubic-bezier(0.16,1,0.3,1),
-              box-shadow 0.4s ease, border-color 0.3s;
+              box-shadow 0.4s ease, border-color 0.3s, background 0.3s;
   position: relative;
 }
-/* Ghost number bg */
-.hc::after {
-  content: attr(data-num);
-  position: absolute; top: -4px; right: 10px;
-  font-family: 'Playfair Display', serif;
-  font-size: 74px; font-weight: 700; line-height: 1;
-  pointer-events: none; user-select: none;
-  opacity: 0.07; transition: opacity 0.35s;
-}
-.hc.open::after { opacity: 0.14; }
+.hac.reg-type { background: rgba(212,175,55,0.08); }
+.hac.inv-type { background: rgba(66,133,244,0.07); }
+.hac.adm-type { background: rgba(231,76,60,0.08); }
 
-/* type colors */
-.hc.gold-type  { background: rgba(212,175,55,0.07); }
-.hc.gold-type::after { color: #D4AF37; }
-.hc.gold-type:hover, .hc.gold-type.open {
-  border-color: rgba(212,175,55,0.5);
-  transform: translateY(-4px);
-  box-shadow: 0 12px 40px rgba(212,175,55,0.15);
-  background: rgba(212,175,55,0.1);
-}
-.hc.purp-type  { background: rgba(155,89,182,0.07); }
-.hc.purp-type::after { color: #9B59B6; }
-.hc.purp-type:hover, .hc.purp-type.open {
-  border-color: rgba(155,89,182,0.5);
-  transform: translateY(-4px);
-  box-shadow: 0 12px 40px rgba(155,89,182,0.15);
-  background: rgba(155,89,182,0.1);
-}
-.hc.red-type   { background: rgba(231,76,60,0.07); }
-.hc.red-type::after { color: #E74C3C; }
-.hc.red-type:hover, .hc.red-type.open {
-  border-color: rgba(231,76,60,0.45);
-  transform: translateY(-4px);
-  box-shadow: 0 12px 40px rgba(231,76,60,0.12);
-  background: rgba(231,76,60,0.1);
-}
+.hac.reg-type:hover, .hac.reg-type.open
+  { border-color: rgba(212,175,55,0.55); transform: translateY(-6px);
+    box-shadow: 0 18px 52px rgba(212,175,55,0.18); background: rgba(212,175,55,0.12); }
+.hac.inv-type:hover, .hac.inv-type.open
+  { border-color: rgba(66,133,244,0.55); transform: translateY(-6px);
+    box-shadow: 0 18px 52px rgba(66,133,244,0.18); background: rgba(66,133,244,0.11); }
+.hac.adm-type:hover, .hac.adm-type.open
+  { border-color: rgba(231,76,60,0.55); transform: translateY(-6px);
+    box-shadow: 0 18px 52px rgba(231,76,60,0.18); background: rgba(231,76,60,0.12); }
 
-/* Top color line */
-.hc::before {
-  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2.5px;
-  opacity: 0; transition: opacity 0.35s;
-  border-radius: 14px 14px 0 0;
+/* Top color bar */
+.hac::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  opacity: 0; transition: opacity 0.35s; border-radius: 18px 18px 0 0;
 }
-.hc.gold-type::before { background: linear-gradient(90deg, #D4AF37, transparent); }
-.hc.purp-type::before { background: linear-gradient(90deg, #9B59B6, transparent); }
-.hc.red-type::before  { background: linear-gradient(90deg, #E74C3C, transparent); }
-.hc:hover::before, .hc.open::before { opacity: 1; }
+.hac.reg-type::before { background: linear-gradient(90deg, #D4AF37, transparent); }
+.hac.inv-type::before { background: linear-gradient(90deg, #4285F4, transparent); }
+.hac.adm-type::before { background: linear-gradient(90deg, #E74C3C, transparent); }
+.hac:hover::before, .hac.open::before { opacity: 1; }
+
+/* Ghost icon */
+.hac-ghost {
+  position: absolute; bottom: -6px; right: 10px;
+  font-size: 88px; line-height: 1; opacity: 0.07;
+  transition: opacity 0.35s; pointer-events: none; user-select: none;
+}
+.hac.open .hac-ghost { opacity: 0.14; }
 
 /* Header */
-.hc-head { padding: 16px 16px 12px; position: relative; z-index: 1; }
-.hc-top  {
-  display: flex; align-items: center; justify-content: space-between;
-  margin-bottom: 8px;
-}
-.hc-badge {
-  display: inline-flex; align-items: center; gap: 5px;
-  padding: 3px 10px; border-radius: 20px;
-  font-size: 9px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase;
-}
-.gold-type .hc-badge { background: rgba(212,175,55,0.2); color: #FFD700; }
-.purp-type .hc-badge { background: rgba(155,89,182,0.2); color: #BB8FCE; }
-.red-type  .hc-badge { background: rgba(231,76,60,0.2);  color: #E8968C; }
+.hac-head { padding: 24px 22px 14px; position: relative; z-index: 1; }
+.hac-top  { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
 
-.hc-arrow {
-  width: 18px; height: 18px; display: flex; align-items: center; justify-content: center;
-  color: rgba(255,255,255,0.3); flex-shrink: 0;
+.hac-badge {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 5px 14px; border-radius: 20px;
+  font-size: 10px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase;
+}
+.reg-type .hac-badge { background: rgba(212,175,55,0.2);  color: #FFD700; }
+.inv-type .hac-badge { background: rgba(66,133,244,0.2);  color: #80AAFF; }
+.adm-type .hac-badge { background: rgba(231,76,60,0.2);   color: #E8968C; }
+
+.hac-chev {
+  width: 20px; height: 20px; flex-shrink: 0; color: rgba(255,255,255,0.28);
   transition: transform 0.35s cubic-bezier(0.16,1,0.3,1), color 0.2s;
 }
-.hc.open .hc-arrow { transform: rotate(180deg); }
-.hc.gold-type.open .hc-arrow { color: #D4AF37; }
-.hc.purp-type.open .hc-arrow { color: #BB8FCE; }
-.hc.red-type.open  .hc-arrow { color: #E8968C; }
+.hac.open .hac-chev { transform: rotate(180deg); }
+.reg-type.open .hac-chev { color: #D4AF37; }
+.inv-type.open .hac-chev { color: #80AAFF; }
+.adm-type.open .hac-chev { color: #E8968C; }
 
-.hc-action {
-  font-size: 12.5px; font-weight: 600;
-  color: rgba(255,255,255,0.92); line-height: 1.35; margin-bottom: 4px;
+.hac-title {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(20px, 2vw, 26px); font-weight: 600;
+  color: rgba(255,255,255,0.95); line-height: 1.2; margin-bottom: 8px;
 }
-.hc-goal {
-  font-size: 11px; line-height: 1.5; color: rgba(255,255,255,0.45);
-  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
-  overflow: hidden;
+.hac-desc { font-size: 13px; line-height: 1.6; color: rgba(255,255,255,0.45); }
+
+/* HU pills */
+.hac-pills {
+  display: flex; flex-wrap: wrap; gap: 6px;
+  padding: 0 22px 16px; position: relative; z-index: 1;
 }
+.hac-pill {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.5px;
+  padding: 3px 10px; border-radius: 5px;
+}
+.reg-type .hac-pill { background: rgba(212,175,55,0.14); color: rgba(212,175,55,0.75); }
+.inv-type .hac-pill { background: rgba(66,133,244,0.14); color: rgba(80,130,244,0.75); }
+.adm-type .hac-pill { background: rgba(231,76,60,0.14);  color: rgba(231,76,60,0.7); }
 
 /* Expandable body */
-.hc-body {
+.hac-body {
   max-height: 0; overflow: hidden;
-  transition: max-height 0.5s cubic-bezier(0.16,1,0.3,1),
-              opacity 0.35s ease;
+  transition: max-height 0.55s cubic-bezier(0.16,1,0.3,1), opacity 0.35s ease;
   opacity: 0;
 }
-.hc.open .hc-body {
-  max-height: 220px;
-  opacity: 1;
+.hac.open .hac-body { max-height: 600px; opacity: 1; }
+.hac-body-in {
+  padding: 0 22px 22px;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  padding-top: 16px;
 }
-.hc-body-inner {
-  padding: 0 16px 14px;
-  border-top: 1px solid rgba(255,255,255,0.07);
-  padding-top: 10px;
-}
-.hc-story-lbl {
-  font-size: 9px; letter-spacing: 3px; text-transform: uppercase;
-  font-weight: 700; margin-bottom: 6px;
-}
-.gold-type .hc-story-lbl { color: rgba(212,175,55,0.6); }
-.purp-type .hc-story-lbl { color: rgba(155,89,182,0.6); }
-.red-type  .hc-story-lbl { color: rgba(231,76,60,0.5);  }
 
-.hc-story {
-  font-size: 11.5px; line-height: 1.65;
-  color: rgba(255,255,255,0.55); margin-bottom: 10px;
+/* Individual HU inside expanded card */
+.hac-hu {
+  margin-bottom: 14px; padding: 14px 16px;
+  border-radius: 12px; border: 1px solid rgba(255,255,255,0.07);
 }
-.hc-criteria { display: flex; flex-direction: column; gap: 4px; }
-.hc-crit {
-  font-size: 10.5px; line-height: 1.45;
-  color: rgba(255,255,255,0.45);
-  display: flex; align-items: flex-start; gap: 7px;
-}
-.hc-crit::before { content: '✓'; flex-shrink: 0; font-size: 10px; margin-top: 1px; }
-.gold-type .hc-crit::before { color: #D4AF37; }
-.purp-type .hc-crit::before { color: #BB8FCE; }
-.red-type  .hc-crit::before { color: #E8968C; }
+.reg-type .hac-hu { background: rgba(212,175,55,0.05); }
+.inv-type .hac-hu { background: rgba(66,133,244,0.05); }
+.adm-type .hac-hu { background: rgba(231,76,60,0.05); }
+.hac-hu:last-child { margin-bottom: 0; }
 
-/* ═══════════════════════════════════════════════════════════════
+.hac-hu-id {
+  font-size: 10px; font-weight: 800; letter-spacing: 2px; margin-bottom: 6px;
+}
+.reg-type .hac-hu-id { color: rgba(212,175,55,0.7); }
+.inv-type .hac-hu-id { color: rgba(80,130,244,0.7); }
+.adm-type .hac-hu-id { color: rgba(231,76,60,0.65); }
+
+.hac-hu-text {
+  font-size: 12.5px; line-height: 1.65; color: rgba(255,255,255,0.58); margin-bottom: 10px;
+}
+.hac-crit {
+  font-size: 11.5px; line-height: 1.5; color: rgba(255,255,255,0.42);
+  display: flex; align-items: flex-start; gap: 7px; margin-bottom: 4px;
+}
+.hac-crit::before { content: '✓'; flex-shrink: 0; font-size: 10px; margin-top: 2px; }
+.reg-type .hac-crit::before { color: #D4AF37; }
+.inv-type .hac-crit::before { color: #80AAFF; }
+.adm-type .hac-crit::before { color: #E8968C; }
+
+/* ══════════════════════════════════════════════════════════
    MER SLIDE
-═══════════════════════════════════════════════════════════════ */
+══════════════════════════════════════════════════════════ */
 .mer-wrap { width: 100%; display: flex; justify-content: center; }
 .mer-svg  { width: 100%; max-height: 490px; height: auto; }
 
-/* ═══════════════════════════════════════════════════════════════
-   CLOSING SLIDE FIX (prevent overflow / disappear)
-═══════════════════════════════════════════════════════════════ */
+/* ══════════════════════════════════════════════════════════
+   CLOSING SLIDE (s11) — prevent overflow/disappear
+══════════════════════════════════════════════════════════ */
 #s11 { overflow: hidden; }
-#s11 .slide-content {
-  justify-content: center !important;
-  padding-top: 0 !important; padding-bottom: 0 !important;
-}
-#s11 .closing-content { max-width: 820px; }
-#s11 .closing-label   { margin-bottom: 18px !important; }
-#s11 .closing-brand   { font-size: clamp(50px,7vw,96px) !important; line-height: 0.95; margin-bottom: 10px !important; }
-#s11 .closing-tagline { margin-bottom: 22px !important; }
-#s11 .closing-quote   { font-size: clamp(17px,2vw,24px) !important; margin-bottom: 28px !important; padding: 0 28px !important; }
+#s11 .slide-content      { justify-content: center !important; padding-top: 0 !important; padding-bottom: 0 !important; }
+#s11 .closing-content    { max-width: 820px; }
+#s11 .closing-label      { margin-bottom: 18px !important; }
+#s11 .closing-brand      { font-size: clamp(50px,7vw,96px) !important; line-height: 0.95; margin-bottom: 10px !important; }
+#s11 .closing-tagline    { margin-bottom: 22px !important; }
+#s11 .closing-quote      { font-size: clamp(17px,2vw,24px) !important; margin-bottom: 28px !important; padding: 0 28px !important; }
 #s11 .closing-quote::before,
 #s11 .closing-quote::after { font-size: 60px !important; }
-#s11 .closing-team    { margin-bottom: 22px !important; gap: 32px !important; }
-#s11 .member-avatar   { width: 54px !important; height: 54px !important; font-size: 16px !important; }
-#s11 .closing-footer  { font-size: 11px !important; }
+#s11 .closing-team       { margin-bottom: 22px !important; gap: 32px !important; }
+#s11 .member-avatar      { width: 54px !important; height: 54px !important; font-size: 16px !important; }
+#s11 .closing-footer     { font-size: 11px !important; }
 
-/* ═══════════════════════════════════════════════════════════════
-   NAV TOOLTIPS
-═══════════════════════════════════════════════════════════════ */
+/* ══════════════════════════════════════════════════════════
+   NAV DOTS — tooltips
+══════════════════════════════════════════════════════════ */
 .nav-dot { position: relative; }
 .nav-dot::after {
   content: attr(data-lbl);
   position: absolute; right: 22px; top: 50%; transform: translateY(-50%);
   background: rgba(3,3,3,0.92); backdrop-filter: blur(16px);
   color: rgba(255,255,255,0.6); font-size: 10px; letter-spacing: 1px;
-  padding: 5px 10px; border-radius: 5px;
-  border: 1px solid rgba(255,255,255,0.08);
-  white-space: nowrap; opacity: 0; pointer-events: none;
-  transition: opacity 0.2s;
+  padding: 5px 10px; border-radius: 5px; border: 1px solid rgba(255,255,255,0.08);
+  white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity 0.2s;
 }
 .nav-dot:hover::after { opacity: 1; }
 
@@ -2302,13 +2404,12 @@ html, body {
   transition: opacity 0.5s; white-space: nowrap;
 }
 
-/* Reset fade-up on inactive slides for re-animation */
+/* Re-animate fade-up on inactive slides */
 .slide:not(.active) .fade-up {
-  opacity: 0 !important; transform: translateY(36px) !important;
-  transition: none !important;
+  opacity: 0 !important; transform: translateY(36px) !important; transition: none !important;
 }
 
-/* Glow on progress fill */
+/* Progress bar glow */
 .progress-fill {
   box-shadow: 0 0 14px rgba(212,175,55,0.5), 0 0 36px rgba(212,175,55,0.15) !important;
 }
@@ -2317,10 +2418,9 @@ html, body {
 </head>
 <body>
 
-<!-- ════════════════════ CINEMATIC INTRO ════════════════════ -->
+<!-- ════════ CINEMATIC INTRO OVERLAY ════════ -->
 <div id="mf-intro">
 
-  <!-- Sprocket holes L/R -->
   <div class="intro-sprocket left">
     <div class="sprocket-hole"></div><div class="sprocket-hole"></div>
     <div class="sprocket-hole"></div><div class="sprocket-hole"></div>
@@ -2334,67 +2434,75 @@ html, body {
     <div class="sprocket-hole"></div><div class="sprocket-hole"></div>
   </div>
 
-  <!-- Letterboxes -->
   <div class="intro-lb top"></div>
   <div class="intro-lb bottom"></div>
-
-  <!-- Flicker -->
   <div id="intro-flicker"></div>
-
-  <!-- Cue mark -->
   <div id="cue-mark"></div>
-
-  <!-- Frame info -->
   <div class="intro-frame-info">MAGIC FILM · 24fps · 2026</div>
 
-  <!-- Countdown -->
-  <div id="intro-countdown">
-    <div class="cd-corner tl"></div>
-    <div class="cd-corner tr"></div>
-    <div class="cd-corner bl"></div>
-    <div class="cd-corner br"></div>
-    <div class="cd-cross h"></div>
-    <div class="cd-cross v"></div>
-    <svg id="cd-svg" viewBox="0 0 210 210">
-      <defs>
-        <filter id="glow-ring">
-          <feGaussianBlur stdDeviation="3" result="b"/>
-          <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
-        </filter>
-      </defs>
-      <!-- tick marks: drawn by JS -->
-      <g id="cd-ticks"></g>
-      <!-- Static outer ring -->
-      <circle cx="105" cy="105" r="98"
-        fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
-      <!-- Animated arc -->
-      <circle id="cd-arc" cx="105" cy="105" r="85"
-        fill="none"
-        stroke="rgba(255,255,255,0.22)" stroke-width="1.5"
-        stroke-dasharray="534" stroke-dashoffset="534"
-        stroke-linecap="round"
-        transform="rotate(-90 105 105)"
-        filter="url(#glow-ring)"/>
-    </svg>
-    <div id="cd-number">5</div>
+  <!-- GATE: click to start + unlock audio -->
+  <div id="intro-gate">
+    <div id="gate-eyebrow">Ingeniería de Software · UNIAUTONOMA</div>
+    <div id="gate-main-title">
+      <span id="gate-welcome">Bienvenidos a</span>
+      <span id="gate-title-text">Magic Film</span>
+    </div>
+    <button id="gate-click-btn" onclick="gateClick()">
+      <div id="gate-ring"><div id="gate-play"></div></div>
+      <div id="gate-label">Haz clic para iniciar</div>
+      <div id="gate-sublabel">con sonido de proyector</div>
+    </button>
   </div>
 
-  <!-- Brand reveal (after countdown) -->
+  <!-- COUNTDOWN: shown after gate click -->
+  <div id="intro-countdown">
+    <div id="cd-wrap">
+      <div class="cd-corner tl"></div>
+      <div class="cd-corner tr"></div>
+      <div class="cd-corner bl"></div>
+      <div class="cd-corner br"></div>
+      <div class="cd-cross h"></div>
+      <div class="cd-cross v"></div>
+      <svg id="cd-svg" viewBox="0 0 210 210">
+        <defs>
+          <filter id="glow-cd">
+            <feGaussianBlur stdDeviation="3" result="b"/>
+            <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+        </defs>
+        <g id="cd-ticks"></g>
+        <circle cx="105" cy="105" r="98"
+          fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
+        <circle id="cd-arc" cx="105" cy="105" r="85"
+          fill="none" stroke="rgba(255,255,255,0.22)" stroke-width="1.5"
+          stroke-dasharray="534" stroke-dashoffset="534"
+          stroke-linecap="round" transform="rotate(-90 105 105)"
+          filter="url(#glow-cd)"/>
+      </svg>
+      <div id="cd-number">5</div>
+    </div>
+  </div>
+
+  <!-- BRAND REVEAL: shown after countdown -->
   <div id="intro-brand-stage">
-    <div id="intro-title">Magic Film</div>
-    <div id="intro-subtitle">Análisis Cinematográfico Adaptativo</div>
-    <button id="intro-cta" onclick="introBegin()">
+    <div id="brand-welcome">Bienvenidos a</div>
+    <div id="brand-title">Magic Film</div>
+    <button id="brand-cta" onclick="introBegin()">
       <span>◆ &nbsp; Comenzar Presentación &nbsp; ◆</span>
     </button>
   </div>
 
 </div><!-- /#mf-intro -->
 
-<!-- Cursor -->
+<!-- Atmosphere particles -->
+<canvas id="dust-canvas"></canvas>
+<div id="film-scratch"></div>
+
+<!-- Custom cursor -->
 <div class="cursor"      id="cursor"></div>
 <div class="cursor-ring" id="cursorRing"></div>
 
-<!-- Atmosphere -->
+<!-- Atmosphere overlays -->
 <div class="grain"></div>
 <div class="vignette"></div>
 <div class="letterbox top"></div>
@@ -2402,7 +2510,7 @@ html, body {
 <div class="film-perforations left"></div>
 <div class="film-perforations right"></div>
 
-<!-- Slide label -->
+<!-- Slide title bar -->
 <div id="slide-lbl"></div>
 
 <!-- Navigation -->
@@ -2421,6 +2529,7 @@ html, body {
 </div>
 
 <div class="deck">
+
 <!-- SLIDE 1: HERO -->
   <div class="slide active" id="s1">
     <div class="film-reel left"></div>
@@ -2531,7 +2640,7 @@ html, body {
         </div>
         <div class="pillar fade-up delay-4">
           <div class="pillar-number">03</div>
-          <h3>Descubres</h3>
+          <h3>Descubre</h3>
           <p>Recibes capas de contenido personalizadas según tu nivel y el tipo de película. Hecho exclusivamente para ti.</p>
         </div>
       </div>
@@ -2570,7 +2679,7 @@ html, body {
         <div class="process-arrow">→</div>
         <div class="process-step">
           <span class="step-icon">🎭</span>
-          <div class="step-label">Tú Descubrís</div>
+          <div class="step-label">Descubre</div>
           <div class="step-desc">Análisis por capas, navegable, diseñado para tu nivel específico</div>
         </div>
       </div>
@@ -2749,421 +2858,286 @@ html, body {
       </div>
     </div>
   </div>
+
   <!-- ═══ SLIDE 7: REQUIREMENTS ═══ -->
   <div class="slide" id="s7">
     <div class="slide-content">
-
-      <div class="fade-up" style="margin-bottom:28px; flex-shrink:0;">
+      <div class="fade-up" style="margin-bottom:28px;flex-shrink:0;">
         <div class="label" style="margin-bottom:14px;">Especificación de Software · SRS v0.1</div>
-        <h2 style="font-family:'Playfair Display',serif; font-size:clamp(30px,3.8vw,54px); font-weight:500; line-height:1.1;">
+        <h2 style="font-family:'Playfair Display',serif;font-size:clamp(30px,3.8vw,54px);font-weight:500;line-height:1.1;">
           Requisitos del <span class="accent">Sistema</span>
         </h2>
       </div>
 
       <div class="req-grid fade-up delay-2">
 
-        <!-- ── Funcionales ── -->
         <div>
           <div class="req-col-head">
             <div class="req-col-dot dot-rf"></div>
-            <span class="req-col-label">Requisitos Funcionales</span>
+            <span class="req-col-lbl">Requisitos Funcionales</span>
           </div>
 
-          <!-- RF-001 -->
           <div class="rc rf-card" onclick="toggleCard(this)">
             <div class="rc-head">
               <div class="rc-badge">RF-001</div>
               <div class="rc-name">Configuración de Perfil Inicial</div>
-              <div class="rc-arrow">
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                  <path d="M3 5l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-                </svg>
-              </div>
+              <div class="rc-arrow"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 5l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></div>
             </div>
-            <div class="rc-body">
-              <div class="rc-body-inner">
-                <p>Al registrarse, el usuario selecciona <strong style="color:#D4AF37">mínimo 3 géneros favoritos</strong> y su nivel de experiencia cinematográfica (principiante, entusiasta o cinéfilo). Estos datos alimentan el motor adaptativo de análisis.</p>
-              </div>
-            </div>
+            <div class="rc-body"><div class="rc-body-inner"><p>Al registrarse, el usuario selecciona <strong style="color:#D4AF37">mínimo 3 géneros favoritos</strong> y su nivel de experiencia. Estos datos alimentan el motor adaptativo de análisis y personalizan las recomendaciones desde el primer acceso.</p></div></div>
           </div>
 
-          <!-- RF-002 -->
           <div class="rc rf-card" onclick="toggleCard(this)">
             <div class="rc-head">
               <div class="rc-badge">RF-002</div>
               <div class="rc-name">Búsqueda con Validación</div>
-              <div class="rc-arrow">
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                  <path d="M3 5l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-                </svg>
-              </div>
+              <div class="rc-arrow"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 5l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></div>
             </div>
-            <div class="rc-body">
-              <div class="rc-body-inner">
-                <p>Búsqueda en tiempo real desde 3 caracteres. Valida el input, consulta la <strong style="color:#D4AF37">API de TMDB</strong> y muestra resultados con título, año, género y tipo de análisis detectado.</p>
-              </div>
-            </div>
+            <div class="rc-body"><div class="rc-body-inner"><p>Campo de búsqueda que valida mínimo 2 caracteres, no solo números ni caracteres especiales. Consulta la <strong style="color:#D4AF37">API de TMDB</strong> y muestra resultados con título, póster y año. Reacciona con Enter o clic en ícono.</p></div></div>
           </div>
 
-          <!-- RF-003 -->
           <div class="rc rf-card" onclick="toggleCard(this)">
             <div class="rc-head">
               <div class="rc-badge">RF-003</div>
               <div class="rc-name">Clasificación Automática por IA</div>
-              <div class="rc-arrow">
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                  <path d="M3 5l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-                </svg>
-              </div>
+              <div class="rc-arrow"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 5l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></div>
             </div>
-            <div class="rc-body">
-              <div class="rc-body-inner">
-                <p>Gemini clasifica cada película como <strong style="color:#D4AF37">Entretenimiento</strong> o <strong style="color:#BB8FCE">Profundo</strong> usando keywords, géneros y sinopsis. El admin puede forzar la clasificación manualmente.</p>
-              </div>
-            </div>
+            <div class="rc-body"><div class="rc-body-inner"><p>Gemini clasifica automáticamente cada película como <strong style="color:#D4AF37">ENTRETENIMIENTO</strong> o <strong style="color:#BB8FCE">PROFUNDO</strong> usando keywords, géneros y sinopsis. Default ENTRETENIMIENTO si la información no es suficiente. El admin puede forzar la clasificación.</p></div></div>
           </div>
 
-          <!-- RF-004 -->
           <div class="rc rf-card" onclick="toggleCard(this)">
             <div class="rc-head">
               <div class="rc-badge">RF-004</div>
               <div class="rc-name">Generación de Análisis con IA</div>
-              <div class="rc-arrow">
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                  <path d="M3 5l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-                </svg>
-              </div>
+              <div class="rc-arrow"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 5l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></div>
             </div>
-            <div class="rc-body">
-              <div class="rc-body-inner">
-                <p><strong style="color:#D4AF37">Google Gemini Pro</strong> genera análisis estructurado con capas diferenciadas según la clasificación. El resultado se almacena en caché para evitar costos repetidos por consulta.</p>
-              </div>
-            </div>
+            <div class="rc-body"><div class="rc-body-inner"><p><strong style="color:#D4AF37">Google Gemini Pro</strong> genera análisis estructurado adaptado al tipo de película. El resultado se almacena en caché — si el análisis ya existe, el sistema lo muestra directamente sin volver a consumir la API.</p></div></div>
           </div>
 
-          <!-- RF-005 -->
           <div class="rc rf-card" onclick="toggleCard(this)">
             <div class="rc-head">
               <div class="rc-badge">RF-005</div>
               <div class="rc-name">Visualización por Capas</div>
-              <div class="rc-arrow">
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                  <path d="M3 5l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-                </svg>
-              </div>
+              <div class="rc-arrow"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 5l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></div>
             </div>
-            <div class="rc-body">
-              <div class="rc-body-inner">
-                <p>El análisis se presenta en pestañas navegables: <strong style="color:#D4AF37">narrativo, simbolismo, contexto histórico y estilo del director</strong>. Cada capa es independiente y colapsable.</p>
-              </div>
-            </div>
+            <div class="rc-body"><div class="rc-body-inner"><p>El análisis se presenta en <strong style="color:#D4AF37">mínimo 4 secciones</strong>: Narrativa, Simbolismo Visual, Contexto Cultural y Técnica Cinematográfica. Cada sección tiene título diferenciado y navegación sin scroll largo.</p></div></div>
           </div>
 
-          <!-- RF-006 -->
           <div class="rc rf-card" onclick="toggleCard(this)">
             <div class="rc-head">
               <div class="rc-badge">RF-006</div>
               <div class="rc-name">Panel de Administración</div>
-              <div class="rc-arrow">
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                  <path d="M3 5l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-                </svg>
-              </div>
+              <div class="rc-arrow"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 5l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></div>
             </div>
-            <div class="rc-body">
-              <div class="rc-body-inner">
-                <p>El administrador gestiona usuarios, fuerza la <strong style="color:#D4AF37">regeneración de análisis</strong>, cambia clasificaciones de películas y revisa los logs del motor de IA.</p>
-              </div>
-            </div>
+            <div class="rc-body"><div class="rc-body-inner"><p>Panel exclusivo para agregar, modificar y eliminar películas. Validación de duplicados por título+año. Doble confirmación al eliminar películas con análisis. Todas las acciones quedan en el <strong style="color:#D4AF37">historial de actividad</strong>.</p></div></div>
           </div>
-        </div><!-- /col funcionales -->
+        </div>
 
-        <!-- ── No Funcionales ── -->
         <div>
           <div class="req-col-head">
             <div class="req-col-dot dot-rnf"></div>
-            <span class="req-col-label">Requisitos No Funcionales</span>
+            <span class="req-col-lbl">Requisitos No Funcionales</span>
           </div>
 
-          <!-- RNF-001 -->
           <div class="rc rnf-card" onclick="toggleCard(this)">
             <div class="rc-head">
               <div class="rc-badge">RNF-001</div>
-              <div class="rc-name">Rendimiento</div>
-              <div class="rc-arrow">
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                  <path d="M3 5l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-                </svg>
-              </div>
+              <div class="rc-name">Tiempo de Respuesta</div>
+              <div class="rc-arrow"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 5l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></div>
             </div>
-            <div class="rc-body">
-              <div class="rc-body-inner">
-                <p>Búsquedas en <strong style="color:#BB8FCE">&lt; 3 s</strong>. Análisis completo visible en <strong style="color:#BB8FCE">&lt; 8 s</strong> bajo carga normal. Análisis en caché responden en menos de 1 s.</p>
-              </div>
-            </div>
+            <div class="rc-body"><div class="rc-body-inner"><p>Búsquedas en <strong style="color:#BB8FCE">&lt; 3 s</strong>. Análisis completo visible en <strong style="color:#BB8FCE">&lt; 8 s</strong> bajo carga normal. Tiempo de carga inicial no debe superar 3 s en conexión estándar. Análisis en caché responden en menos de 1 s.</p></div></div>
           </div>
 
-          <!-- RNF-002 -->
           <div class="rc rnf-card" onclick="toggleCard(this)">
             <div class="rc-head">
               <div class="rc-badge">RNF-002</div>
               <div class="rc-name">Usabilidad</div>
-              <div class="rc-arrow">
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                  <path d="M3 5l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-                </svg>
-              </div>
+              <div class="rc-arrow"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 5l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></div>
             </div>
-            <div class="rc-body">
-              <div class="rc-body-inner">
-                <p>Un usuario nuevo realiza su primera búsqueda y ve un análisis completo en <strong style="color:#BB8FCE">máximo 3 clics</strong> desde la pantalla principal. Sin curva de aprendizaje.</p>
-              </div>
-            </div>
+            <div class="rc-body"><div class="rc-body-inner"><p>Un usuario nuevo busca y ve un análisis completo en <strong style="color:#BB8FCE">máximo 3 clics</strong>. La interfaz debe ser clara y organizada visualmente. Se recomienda validar usabilidad con pruebas reales antes de la entrega final.</p></div></div>
           </div>
 
-          <!-- RNF-003 -->
           <div class="rc rnf-card" onclick="toggleCard(this)">
             <div class="rc-head">
               <div class="rc-badge">RNF-003</div>
-              <div class="rc-name">Disponibilidad</div>
-              <div class="rc-arrow">
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                  <path d="M3 5l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-                </svg>
-              </div>
+              <div class="rc-name">Compatibilidad</div>
+              <div class="rc-arrow"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 5l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></div>
             </div>
-            <div class="rc-body">
-              <div class="rc-body-inner">
-                <p>Uptime mínimo del <strong style="color:#BB8FCE">95%</strong>. Manejo elegante de errores de TMDB y Gemini: muestra caché disponible y mensajes claros cuando las APIs fallen.</p>
-              </div>
-            </div>
+            <div class="rc-body"><div class="rc-body-inner"><p>Compatible con Chrome, Firefox y Edge en versiones actuales. Diseño responsive funcional desde <strong style="color:#BB8FCE">375 px</strong> de ancho en móviles y desde 1024×768 en escritorio. No se requiere soporte para navegadores obsoletos.</p></div></div>
           </div>
 
-          <!-- RNF-004 -->
           <div class="rc rnf-card" onclick="toggleCard(this)">
             <div class="rc-head">
               <div class="rc-badge">RNF-004</div>
-              <div class="rc-name">Compatibilidad</div>
-              <div class="rc-arrow">
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                  <path d="M3 5l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-                </svg>
-              </div>
+              <div class="rc-name">Disponibilidad</div>
+              <div class="rc-arrow"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 5l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></div>
             </div>
-            <div class="rc-body">
-              <div class="rc-body-inner">
-                <p>Compatible con las <strong style="color:#BB8FCE">2 últimas versiones</strong> de Chrome, Firefox, Edge y Safari. Diseño responsive funcional desde 375 px de ancho (móviles).</p>
-              </div>
-            </div>
+            <div class="rc-body"><div class="rc-body-inner"><p>El sistema maneja errores de TMDB y Gemini mostrando mensajes claros y sirviendo contenido en caché cuando esté disponible. Sin interrumpir el funcionamiento general de la plataforma en caso de fallo de API.</p></div></div>
           </div>
 
-          <!-- RNF-005 -->
           <div class="rc rnf-card" onclick="toggleCard(this)">
             <div class="rc-head">
               <div class="rc-badge">RNF-005</div>
               <div class="rc-name">Seguridad</div>
-              <div class="rc-arrow">
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                  <path d="M3 5l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-                </svg>
-              </div>
+              <div class="rc-arrow"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 5l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></div>
             </div>
-            <div class="rc-body">
-              <div class="rc-body-inner">
-                <p>Contraseñas con <strong style="color:#BB8FCE">bcrypt</strong>. Claves API solo en variables de entorno del servidor. Sesiones JWT con expiración configurable. Rutas admin protegidas por rol.</p>
-              </div>
-            </div>
+            <div class="rc-body"><div class="rc-body-inner"><p>Contraseñas con <strong style="color:#BB8FCE">bcrypt</strong>. Claves API exclusivamente en variables de entorno del servidor. Sesiones JWT con expiración configurable. Panel admin protegido y accesible únicamente con rol de administrador.</p></div></div>
           </div>
 
-          <div class="req-srs-note" style="margin-top:12px;">
+          <div class="req-note" style="margin-top:12px;">
             <p>Cada requisito tiene criterios de aceptación verificables documentados en el <strong>SRS v0.1</strong>.</p>
           </div>
-        </div><!-- /col no funcionales -->
+        </div>
 
-      </div><!-- /req-grid -->
+      </div>
     </div>
   </div>
+
 
   <!-- ═══ SLIDE 8: USER STORIES ═══ -->
   <div class="slide" id="s8">
     <div class="slide-content">
-
-      <div class="fade-up" style="margin-bottom:24px; flex-shrink:0;">
-        <div class="label" style="margin-bottom:14px;">Metodología Ágil · XP</div>
-        <h2 style="font-family:'Playfair Display',serif; font-size:clamp(30px,3.8vw,54px); font-weight:500; line-height:1.1;">
+      <div class="fade-up" style="margin-bottom:24px;flex-shrink:0;">
+        <div class="label" style="margin-bottom:14px;">Metodología Ágil · XP · SRS v0.1</div>
+        <h2 style="font-family:'Playfair Display',serif;font-size:clamp(30px,3.8vw,54px);font-weight:500;line-height:1.1;">
           Historias de <span class="accent">Usuario</span>
         </h2>
       </div>
 
-      <div class="hu-grid fade-up delay-2">
+      <div class="hu-actor-grid fade-up delay-2">
 
-        <!-- HU01 -->
-        <div class="hc gold-type" data-num="01" onclick="toggleCard(this)">
-          <div class="hc-head">
-            <div class="hc-top">
-              <span class="hc-badge">👤 Registrado</span>
-              <div class="hc-arrow">
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                  <path d="M3 5l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-                </svg>
-              </div>
+        <!-- ══ USUARIO REGISTRADO ══ -->
+        <div class="hac reg-type" onclick="toggleCard(this)">
+          <div class="hac-ghost">👤</div>
+          <div class="hac-head">
+            <div class="hac-top">
+              <span class="hac-badge">👤 Registrado</span>
+              <svg class="hac-chev" viewBox="0 0 16 16" fill="none">
+                <path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+              </svg>
             </div>
-            <div class="hc-action">Configurar perfil cinematográfico</div>
-            <div class="hc-goal">Para recibir análisis adaptados a mis géneros y nivel.</div>
+            <div class="hac-title">Usuario Registrado</div>
+            <div class="hac-desc">Cuenta creada y perfil cinematográfico completo. Acceso completo: genera análisis, guarda favoritos y recibe recomendaciones personalizadas.</div>
           </div>
-          <div class="hc-body">
-            <div class="hc-body-inner">
-              <div class="hc-story-lbl">Historia</div>
-              <div class="hc-story">Como usuario registrado, <em>quiero configurar mi perfil cinematográfico</em> para recibir análisis adaptados a mis preferencias.</div>
-              <div class="hc-criteria">
-                <div class="hc-crit">Selecciono mínimo 3 géneros al registrarme</div>
-                <div class="hc-crit">Elijo nivel: principiante, entusiasta o cinéfilo</div>
-                <div class="hc-crit">Actualizo preferencias en cualquier momento</div>
+          <div class="hac-pills">
+            <span class="hac-pill">HU-01</span>
+            <span class="hac-pill">HU-02</span>
+            <span class="hac-pill">HU-03</span>
+            <span class="hac-pill">HU-04</span>
+            <span class="hac-pill">HU-05</span>
+          </div>
+          <div class="hac-body">
+            <div class="hac-body-in">
+              <div class="hac-hu">
+                <div class="hac-hu-id">HU-01 · Búsqueda de película</div>
+                <div class="hac-hu-text">Como usuario, quiero buscar películas por nombre para encontrar la que deseo analizar.</div>
+                <div class="hac-crit">Campo de búsqueda prominente en la pantalla principal</div>
+                <div class="hac-crit">Resultados con título, póster y año. Mínimo 2 caracteres</div>
+                <div class="hac-crit">Funciona con Enter o clic en ícono, sin botón separado</div>
+              </div>
+              <div class="hac-hu">
+                <div class="hac-hu-id">HU-02 · Clasificación automática</div>
+                <div class="hac-hu-text">Como usuario, quiero que el sistema identifique el tipo de película para que el análisis esté adaptado.</div>
+                <div class="hac-crit">Clasificación previa a mostrar cualquier contenido</div>
+                <div class="hac-crit">Ocurre en segundo plano mientras carga el análisis</div>
+                <div class="hac-crit">Default ENTRETENIMIENTO si la IA no tiene suficiente info</div>
+              </div>
+              <div class="hac-hu">
+                <div class="hac-hu-id">HU-03 · Análisis adaptado al tipo</div>
+                <div class="hac-hu-text">Como usuario, quiero un análisis adaptado según si la película es de entretenimiento o cine profundo.</div>
+                <div class="hac-crit">ENTRETENIMIENTO: trama, personajes, valor recreativo</div>
+                <div class="hac-crit">PROFUNDO: simbolismo, contexto cultural y técnica</div>
+                <div class="hac-crit">En español. Desde caché si ya fue generado previamente</div>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- HU02 -->
-        <div class="hc gold-type" data-num="02" onclick="toggleCard(this)">
-          <div class="hc-head">
-            <div class="hc-top">
-              <span class="hc-badge">🔍 Usuario</span>
-              <div class="hc-arrow">
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                  <path d="M3 5l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-                </svg>
-              </div>
+        <!-- ══ USUARIO INVITADO ══ -->
+        <div class="hac inv-type" onclick="toggleCard(this)">
+          <div class="hac-ghost">👁</div>
+          <div class="hac-head">
+            <div class="hac-top">
+              <span class="hac-badge">👁 Invitado</span>
+              <svg class="hac-chev" viewBox="0 0 16 16" fill="none">
+                <path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+              </svg>
             </div>
-            <div class="hc-action">Buscar cualquier película por nombre</div>
-            <div class="hc-goal">Para encontrarla rápidamente sin confusiones.</div>
+            <div class="hac-title">Usuario Invitado</div>
+            <div class="hac-desc">Accede sin crear cuenta. Puede buscar y ver análisis ya generados, pero no puede crear nuevos ni acceder a funciones personalizadas.</div>
           </div>
-          <div class="hc-body">
-            <div class="hc-body-inner">
-              <div class="hc-story-lbl">Historia</div>
-              <div class="hc-story">Como usuario, <em>quiero buscar cualquier película por su título</em> para encontrar la que quiero analizar.</div>
-              <div class="hc-criteria">
-                <div class="hc-crit">Resultados en tiempo real desde 3 caracteres</div>
-                <div class="hc-crit">Veo título, año, género y tipo de análisis</div>
-                <div class="hc-crit">Mensaje claro si no hay resultados</div>
+          <div class="hac-pills">
+            <span class="hac-pill">HU-01</span>
+            <span class="hac-pill">HU-04</span>
+            <span class="hac-pill">HU-05</span>
+          </div>
+          <div class="hac-body">
+            <div class="hac-body-in">
+              <div class="hac-hu">
+                <div class="hac-hu-id">HU-01 · Búsqueda (modo lectura)</div>
+                <div class="hac-hu-text">Como invitado, puedo buscar películas y ver análisis existentes sin necesidad de registrarme.</div>
+                <div class="hac-crit">Acceso al buscador y análisis existentes sin registro</div>
+                <div class="hac-crit">Invitación discreta para registrarse y desbloquear más funciones</div>
               </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- HU03 -->
-        <div class="hc purp-type" data-num="03" onclick="toggleCard(this)">
-          <div class="hc-head">
-            <div class="hc-top">
-              <span class="hc-badge">🎓 Cinéfilo</span>
-              <div class="hc-arrow">
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                  <path d="M3 5l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-                </svg>
+              <div class="hac-hu">
+                <div class="hac-hu-id">HU-04 · Visualización por secciones</div>
+                <div class="hac-hu-text">Como usuario, quiero el análisis en secciones diferenciadas para leer cada aspecto de forma independiente.</div>
+                <div class="hac-crit">Mínimo 4 secciones: Narrativa, Simbolismo, Contexto, Técnica</div>
+                <div class="hac-crit">Mecanismo de navegación sin scroll largo</div>
+                <div class="hac-crit">Secciones con título visible y espaciado diferenciado</div>
               </div>
-            </div>
-            <div class="hc-action">Ver análisis profundo de cine de autor</div>
-            <div class="hc-goal">Para entender simbolismo y estilo del director.</div>
-          </div>
-          <div class="hc-body">
-            <div class="hc-body-inner">
-              <div class="hc-story-lbl">Historia</div>
-              <div class="hc-story">Como cinéfilo, <em>quiero acceder al análisis profundo</em> de películas de autor para comprender su lenguaje cinematográfico.</div>
-              <div class="hc-criteria">
-                <div class="hc-crit">Análisis dividido en capas navegables</div>
-                <div class="hc-crit">Incluye simbolismo visual y técnicas narrativas</div>
-                <div class="hc-crit">Contextualización histórica y social</div>
+              <div class="hac-hu">
+                <div class="hac-hu-id">HU-05 · Info general de película</div>
+                <div class="hac-hu-text">Como usuario, quiero ver la información básica junto al análisis para tener contexto de la obra.</div>
+                <div class="hac-crit">Título, año, duración, géneros, director y póster</div>
+                <div class="hac-crit">"Información no disponible" si TMDB no retorna el dato</div>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- HU04 -->
-        <div class="hc gold-type" data-num="04" onclick="toggleCard(this)">
-          <div class="hc-head">
-            <div class="hc-top">
-              <span class="hc-badge">👁 Invitado</span>
-              <div class="hc-arrow">
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                  <path d="M3 5l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-                </svg>
-              </div>
+        <!-- ══ ADMINISTRADOR ══ -->
+        <div class="hac adm-type" onclick="toggleCard(this)">
+          <div class="hac-ghost">⚙️</div>
+          <div class="hac-head">
+            <div class="hac-top">
+              <span class="hac-badge">⚙️ Administrador</span>
+              <svg class="hac-chev" viewBox="0 0 16 16" fill="none">
+                <path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+              </svg>
             </div>
-            <div class="hc-action">Explorar análisis sin registrarme</div>
-            <div class="hc-goal">Para evaluar la plataforma antes de crear una cuenta.</div>
+            <div class="hac-title">Administrador</div>
+            <div class="hac-desc">Panel exclusivo para gestionar películas, regenerar análisis con IA y monitorear el rendimiento del sistema en tiempo real.</div>
           </div>
-          <div class="hc-body">
-            <div class="hc-body-inner">
-              <div class="hc-story-lbl">Historia</div>
-              <div class="hc-story">Como usuario invitado, <em>quiero explorar sin necesidad de registrarme</em> para decidir si la plataforma vale mi tiempo.</div>
-              <div class="hc-criteria">
-                <div class="hc-crit">Accedo a búsqueda y análisis básico</div>
-                <div class="hc-crit">Veo invitación discreta a registrarme</div>
-                <div class="hc-crit">Sin límite inicial de consultas</div>
+          <div class="hac-pills">
+            <span class="hac-pill">HU-06</span>
+            <span class="hac-pill">HU-07</span>
+          </div>
+          <div class="hac-body">
+            <div class="hac-body-in">
+              <div class="hac-hu">
+                <div class="hac-hu-id">HU-06 · Panel de gestión de películas</div>
+                <div class="hac-hu-text">Como administrador, quiero un panel exclusivo para agregar, modificar y eliminar películas en la base de datos.</div>
+                <div class="hac-crit">Accesible únicamente con credenciales de administrador</div>
+                <div class="hac-crit">Formulario validado al agregar: evita duplicados por título + año</div>
+                <div class="hac-crit">Doble advertencia al eliminar película con análisis asociado</div>
+                <div class="hac-crit">Historial con fecha y detalle de cada acción realizada</div>
               </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- HU05 -->
-        <div class="hc purp-type" data-num="05" onclick="toggleCard(this)">
-          <div class="hc-head">
-            <div class="hc-top">
-              <span class="hc-badge">🍿 Casual</span>
-              <div class="hc-arrow">
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                  <path d="M3 5l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-                </svg>
-              </div>
-            </div>
-            <div class="hc-action">Entender una película sin leer una tesis</div>
-            <div class="hc-goal">Para disfrutar el análisis en lenguaje accesible.</div>
-          </div>
-          <div class="hc-body">
-            <div class="hc-body-inner">
-              <div class="hc-story-lbl">Historia</div>
-              <div class="hc-story">Como espectador casual, <em>quiero entender Midsommar sin estudiar antropología sueca</em> para disfrutarlo en mi propio nivel.</div>
-              <div class="hc-criteria">
-                <div class="hc-crit">El sistema detecta el tipo automáticamente</div>
-                <div class="hc-crit">Modo entretenimiento usa lenguaje coloquial</div>
-                <div class="hc-crit">Incluye easter eggs y curiosidades del rodaje</div>
+              <div class="hac-hu">
+                <div class="hac-hu-id">HU-07 · Monitoreo en tiempo real</div>
+                <div class="hac-hu-text">Como administrador, quiero monitorear el rendimiento para detectar fallos antes de que afecten a los usuarios.</div>
+                <div class="hac-crit">Tiempo de respuesta promedio de últimas consultas de análisis</div>
+                <div class="hac-crit">Estado de TMDB y Gemini: "Operativo" / "No disponible"</div>
+                <div class="hac-crit">Alerta visual si promedio supera 5 s — actualización automática</div>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- HU06 -->
-        <div class="hc red-type" data-num="06" onclick="toggleCard(this)">
-          <div class="hc-head">
-            <div class="hc-top">
-              <span class="hc-badge">⚙️ Admin</span>
-              <div class="hc-arrow">
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                  <path d="M3 5l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-                </svg>
-              </div>
-            </div>
-            <div class="hc-action">Gestionar contenido y usuarios</div>
-            <div class="hc-goal">Para mantener la calidad de los análisis.</div>
-          </div>
-          <div class="hc-body">
-            <div class="hc-body-inner">
-              <div class="hc-story-lbl">Historia</div>
-              <div class="hc-story">Como administrador, <em>quiero gestionar el contenido del sistema</em> para mantener la calidad y controlar los usuarios.</div>
-              <div class="hc-criteria">
-                <div class="hc-crit">Veo y gestiono todos los usuarios</div>
-                <div class="hc-crit">Fuerzo regeneración de cualquier análisis</div>
-                <div class="hc-crit">Accedo a estadísticas y logs de IA</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-      </div><!-- /hu-grid -->
+      </div>
     </div>
   </div>
 
-  <!-- ═══ SLIDE 9: MER ═══ -->
+<!-- ═══ SLIDE 9: MER ═══ -->
   <div class="slide" id="s9">
     <div class="slide-content">
       <div class="fade-up" style="margin-bottom:16px;">
@@ -3493,7 +3467,7 @@ html, body {
             <div class="diagram-arrow">↓</div>
             <div class="diagram-row">
               <div class="diagram-node diagram-api tmdb">API TMDB</div>
-              <div class="diagram-node diagram-api db">PostgreSQL</div>
+              <div class="diagram-node diagram-api db">Mysql</div>
               <div class="diagram-node diagram-api gemini">Google Gemini</div>
             </div>
           </div>
@@ -3512,7 +3486,7 @@ html, body {
             <span class="tech-chip">JavaScript ES6+</span>
             <span class="tech-chip">TMDB API v3</span>
             <span class="tech-chip">Google Gemini Pro</span>
-            <span class="tech-chip">PostgreSQL</span>
+            <span class="tech-chip">Mysql</span>
           </div>
           <h3>Roles del Sistema</h3>
           <div class="roles-grid">
@@ -3549,7 +3523,8 @@ html, body {
         </div>
       </div>
     </div>
-  </div><!-- SLIDE 8: CLOSING -->
+  </div>
+<!-- SLIDE 8: CLOSING -->
   <div class="slide" id="s11">
     <div class="slide-content" style="align-items: center;">
       <div class="closing-content">
@@ -3584,173 +3559,272 @@ html, body {
     </div>
   </div>
 
-</div>
 </div><!-- /deck -->
 
 <script>
-/* ════════════════ WEB AUDIO — PROJECTOR ENGINE ════════════════ */
+/* ════════════════════════════════════════════════════════
+   DUST PARTICLE SYSTEM
+════════════════════════════════════════════════════════ */
+(function() {
+  const canvas = document.getElementById('dust-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  let W = 0, H = 0;
+  const particles = [];
+
+  function resize() {
+    W = canvas.width  = innerWidth;
+    H = canvas.height = innerHeight;
+  }
+  resize();
+  addEventListener('resize', resize);
+
+  for (let i = 0; i < 55; i++) {
+    particles.push({
+      x: Math.random() * innerWidth,
+      y: Math.random() * innerHeight,
+      r: Math.random() * 1.1 + 0.3,
+      vx: (Math.random() - 0.5) * 0.14,
+      vy: Math.random() * 0.11 + 0.02,
+      baseOpacity: Math.random() * 0.38 + 0.08,
+      flicker: Math.random() * Math.PI * 2,
+      fSpeed: Math.random() * 0.038 + 0.01,
+    });
+  }
+
+  function loop() {
+    ctx.clearRect(0, 0, W, H);
+    particles.forEach(p => {
+      p.flicker += p.fSpeed;
+      const a = p.baseOpacity * (0.55 + 0.45 * Math.sin(p.flicker));
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(255,255,255,${a})`;
+      ctx.fill();
+      p.x += p.vx;
+      p.y += p.vy;
+      if (p.y > H + 4) { p.y = -4; p.x = Math.random() * W; }
+      if (p.x < -4 || p.x > W + 4) { p.x = Math.random() * W; }
+    });
+    requestAnimationFrame(loop);
+  }
+  loop();
+})();
+
+/* ════════════════════════════════════════════════════════
+   RANDOM FILM SCRATCH
+════════════════════════════════════════════════════════ */
+(function() {
+  const el = document.getElementById('film-scratch');
+  if (!el) return;
+  function maybeFlash() {
+    if (Math.random() < 0.14) {
+      el.style.left = (15 + Math.random() * 70) + '%';
+      el.style.opacity = (Math.random() * 0.45 + 0.1).toString();
+      setTimeout(() => { el.style.opacity = '0'; }, 55 + Math.random() * 90);
+    }
+    setTimeout(maybeFlash, 1800 + Math.random() * 5500);
+  }
+  setTimeout(maybeFlash, 4000);
+})();
+
+/* ════════════════════════════════════════════════════════
+   WEB AUDIO ENGINE
+   AudioContext is created ONLY inside gateClick (user gesture).
+   This guarantees sound works in all browsers.
+════════════════════════════════════════════════════════ */
 let AC = null, projGain = null;
 
-function bootAudio() {
-  if (AC) return;
+function initAudio() {
+  if (AC) return true;
   try {
     AC = new (window.AudioContext || window.webkitAudioContext)();
-  } catch(e) {}
+    return true;
+  } catch(e) {
+    console.warn('WebAudio unavailable:', e);
+    return false;
+  }
 }
 
 function startProjectorSound() {
   if (!AC) return;
+  if (AC.state === 'suspended') { AC.resume().catch(() => {}); }
+
   projGain = AC.createGain();
   projGain.gain.value = 0;
   projGain.connect(AC.destination);
 
-  /* White-noise layer */
-  const bufSec = 3, sr = AC.sampleRate;
-  const buf = AC.createBuffer(1, sr * bufSec, sr);
+  /* White noise filtered to projector frequency range */
+  const sr = AC.sampleRate;
+  const buf = AC.createBuffer(1, sr * 4, sr);
   const d = buf.getChannelData(0);
   for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * 0.5;
+
   const noise = AC.createBufferSource();
   noise.buffer = buf; noise.loop = true;
 
-  /* Band-pass → projector "whirr" */
-  const bp1 = AC.createBiquadFilter();
-  bp1.type = 'bandpass'; bp1.frequency.value = 180; bp1.Q.value = 0.5;
-  const bp2 = AC.createBiquadFilter();
-  bp2.type = 'bandpass'; bp2.frequency.value = 420; bp2.Q.value = 0.8;
-  const noiseGain = AC.createGain(); noiseGain.gain.value = 0.6;
+  const bp1 = AC.createBiquadFilter(); bp1.type = 'bandpass'; bp1.frequency.value = 160; bp1.Q.value = 0.4;
+  const bp2 = AC.createBiquadFilter(); bp2.type = 'bandpass'; bp2.frequency.value = 450; bp2.Q.value = 0.9;
+  const ng  = AC.createGain();         ng.gain.value = 0.7;
 
   /* Motor hum oscillator */
-  const osc = AC.createOscillator();
-  osc.type = 'sawtooth'; osc.frequency.value = 48;
-  const oscGain = AC.createGain(); oscGain.gain.value = 0.12;
+  const osc = AC.createOscillator(); osc.type = 'sawtooth'; osc.frequency.value = 50;
+  const og  = AC.createGain();        og.gain.value = 0.15;
 
-  /* LFO for slight speed variation */
-  const lfo = AC.createOscillator();
-  lfo.type = 'sine'; lfo.frequency.value = 0.9;
-  const lfoGain = AC.createGain(); lfoGain.gain.value = 4;
-  lfo.connect(lfoGain); lfoGain.connect(osc.frequency);
+  /* LFO for subtle speed wobble */
+  const lfo = AC.createOscillator(); lfo.type = 'sine'; lfo.frequency.value = 0.7;
+  const lg  = AC.createGain();        lg.gain.value = 5;
+  lfo.connect(lg); lg.connect(osc.frequency);
 
-  noise.connect(bp1); bp1.connect(noiseGain);
-  noise.connect(bp2); bp2.connect(noiseGain);
-  noiseGain.connect(projGain);
-  osc.connect(oscGain); oscGain.connect(projGain);
+  noise.connect(bp1); bp1.connect(ng);
+  noise.connect(bp2); bp2.connect(ng);
+  ng.connect(projGain);
+  osc.connect(og); og.connect(projGain);
 
   noise.start(); osc.start(); lfo.start();
-
-  projGain.gain.linearRampToValueAtTime(0.22, AC.currentTime + 1.2);
+  projGain.gain.linearRampToValueAtTime(0.22, AC.currentTime + 1.4);
 }
 
 function stopProjectorSound() {
   if (!projGain) return;
-  projGain.gain.linearRampToValueAtTime(0, AC.currentTime + 1.4);
+  projGain.gain.linearRampToValueAtTime(0, AC.currentTime + 1.5);
 }
 
 function playTick() {
   if (!AC) return;
   const o = AC.createOscillator(), g = AC.createGain();
-  o.frequency.value = 1100; o.type = 'sine';
-  g.gain.setValueAtTime(0.28, AC.currentTime);
+  o.type = 'sine'; o.frequency.value = 1050;
+  g.gain.setValueAtTime(0.3, AC.currentTime);
   g.gain.exponentialRampToValueAtTime(0.001, AC.currentTime + 0.07);
   o.connect(g); g.connect(AC.destination);
   o.start(); o.stop(AC.currentTime + 0.09);
 }
 
-function playRevealSound() {
+function playRevealChord() {
   if (!AC) return;
-  const freqs = [330, 415, 494, 659, 880];
-  freqs.forEach((f, i) => {
+  [330, 415, 494, 660, 880].forEach((freq, i) => {
     const o = AC.createOscillator(), g = AC.createGain();
-    o.type = 'sine'; o.frequency.value = f;
-    const t = AC.currentTime + i * 0.045;
+    o.type = 'sine'; o.frequency.value = freq;
+    const t = AC.currentTime + i * 0.042;
     g.gain.setValueAtTime(0, t);
-    g.gain.linearRampToValueAtTime(0.07, t + 0.1);
-    g.gain.exponentialRampToValueAtTime(0.001, t + 2.2);
+    g.gain.linearRampToValueAtTime(0.065, t + 0.1);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 2.6);
     o.connect(g); g.connect(AC.destination);
-    o.start(t); o.stop(t + 2.4);
+    o.start(t); o.stop(t + 2.8);
   });
 }
 
-/* ════════════════ COUNTDOWN CONTROLLER ════════════════ */
-(function() {
-  const ARC_CIRCUM = 2 * Math.PI * 85; // r=85 → ≈534
-  const TOTAL_FRAMES = 5;
-  let frame = TOTAL_FRAMES;
+/* ════════════════════════════════════════════════════════
+   GATE: unlocks AudioContext via user gesture, then starts countdown
+════════════════════════════════════════════════════════ */
+function gateClick() {
+  /* Must call initAudio() synchronously inside a user gesture event */
+  initAudio();
+  startProjectorSound();
 
-  const arc      = document.getElementById('cd-arc');
-  const numEl    = document.getElementById('cd-number');
-  const cue      = document.getElementById('cue-mark');
-  const flicker  = document.getElementById('intro-flicker');
-  const cdStage  = document.getElementById('intro-countdown');
-  const brandStage = document.getElementById('intro-brand-stage');
-  const title    = document.getElementById('intro-title');
-  const subtitle = document.getElementById('intro-subtitle');
-  const ctaBtn   = document.getElementById('intro-cta');
+  /* Hide gate with fade */
+  const gate = document.getElementById('intro-gate');
+  gate.style.transition = 'opacity 0.5s ease';
+  gate.style.opacity = '0';
+  setTimeout(() => { gate.style.display = 'none'; }, 520);
 
-  /* Draw tick marks */
+  /* Show countdown */
+  const cd = document.getElementById('intro-countdown');
+  cd.style.transition = 'opacity 0.4s ease 0.3s';
+  cd.style.opacity = '1';
+  cd.style.pointerEvents = 'auto';
+
+  setTimeout(startCountdown, 700);
+}
+
+/* ════════════════════════════════════════════════════════
+   COUNTDOWN (5 → 1 → brand reveal)
+════════════════════════════════════════════════════════ */
+function startCountdown() {
+  const ARC_CIRCUM = 2 * Math.PI * 85; /* r = 85, circumference ≈ 534 */
+  let frame = 5;
+
+  const arc       = document.getElementById('cd-arc');
+  const numEl     = document.getElementById('cd-number');
+  const cue       = document.getElementById('cue-mark');
+  const flicker   = document.getElementById('intro-flicker');
+  const cdDiv     = document.getElementById('intro-countdown');
+  const brandDiv  = document.getElementById('intro-brand-stage');
+  const welcome   = document.getElementById('brand-welcome');
+  const titleEl   = document.getElementById('brand-title');
+  const ctaEl     = document.getElementById('brand-cta');
+
+  /* Draw tick marks once */
   const tickG = document.getElementById('cd-ticks');
-  for (let i = 0; i < 60; i++) {
-    const a = (i / 60) * 2 * Math.PI - Math.PI / 2;
-    const big = i % 5 === 0;
-    const r0 = big ? 92 : 97, r1 = 102;
-    const ln = document.createElementNS('http://www.w3.org/2000/svg','line');
-    ln.setAttribute('x1', 105 + r0 * Math.cos(a));
-    ln.setAttribute('y1', 105 + r0 * Math.sin(a));
-    ln.setAttribute('x2', 105 + r1 * Math.cos(a));
-    ln.setAttribute('y2', 105 + r1 * Math.sin(a));
-    ln.setAttribute('stroke', big
-      ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.1)');
-    ln.setAttribute('stroke-width', big ? '1.5' : '0.8');
-    tickG.appendChild(ln);
+  if (tickG && tickG.childElementCount === 0) {
+    for (let i = 0; i < 60; i++) {
+      const a   = (i / 60) * 2 * Math.PI - Math.PI / 2;
+      const big = i % 5 === 0;
+      const r0  = big ? 91 : 97;
+      const ln  = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      ln.setAttribute('x1', 105 + r0 * Math.cos(a));
+      ln.setAttribute('y1', 105 + r0 * Math.sin(a));
+      ln.setAttribute('x2', 105 + 103 * Math.cos(a));
+      ln.setAttribute('y2', 105 + 103 * Math.sin(a));
+      ln.setAttribute('stroke', big ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.1)');
+      ln.setAttribute('stroke-width', big ? '1.5' : '0.8');
+      tickG.appendChild(ln);
+    }
   }
 
-  /* Flicker helper */
+  /* Flicker sequence helper */
   function flick(cb) {
-    const seq = [0.7, 0, 0.9, 0.15, 0.95, 0, 0.8, 0];
+    const seq = [0.7, 0, 0.88, 0.1, 0.95, 0, 0.72, 0];
     let i = 0;
-    const run = () => {
+    (function run() {
       if (i < seq.length) {
-        flicker.style.opacity = seq[i] * 0.4;
+        flicker.style.opacity = (seq[i] * 0.4).toString();
         i++;
-        setTimeout(run, 28);
+        setTimeout(run, 27);
       } else {
-        flicker.style.opacity = 0;
+        flicker.style.opacity = '0';
         cb && cb();
       }
-    };
-    run();
+    })();
   }
 
-  /* Advance one frame */
+  /* Advance one countdown frame */
   function tick() {
     if (frame <= 0) {
-      // Big white flash → brand reveal
+      /* Flash → brand reveal */
       flicker.style.transition = 'none';
       flicker.style.opacity = '1';
       setTimeout(() => {
-        flicker.style.transition = 'opacity 0.7s ease';
+        flicker.style.transition = 'opacity 0.8s ease';
         flicker.style.opacity = '0';
-        cdStage.style.transition = 'opacity 0.3s';
-        cdStage.style.opacity = '0';
-        brandStage.style.opacity = '1';
-        brandStage.style.pointerEvents = 'auto';
+
+        /* Fade out countdown */
+        cdDiv.style.transition = 'opacity 0.35s ease';
+        cdDiv.style.opacity = '0';
+        setTimeout(() => { cdDiv.style.display = 'none'; }, 380);
+
+        /* Reveal brand stage */
+        brandDiv.style.opacity = '1';
+        brandDiv.style.pointerEvents = 'auto';
+
         stopProjectorSound();
-        playRevealSound();
+        playRevealChord();
+
+        /* Stagger brand text animations */
         requestAnimationFrame(() => {
-          title.classList.add('show');
-          subtitle.classList.add('show');
+          welcome.classList.add('show');
+          requestAnimationFrame(() => { titleEl.classList.add('show'); });
         });
-        setTimeout(() => ctaBtn.classList.add('show'), 1100);
-      }, 60);
+        setTimeout(() => { ctaEl.classList.add('show'); }, 1300);
+
+      }, 55);
       return;
     }
 
     numEl.textContent = frame;
-
-    /* Update progress arc — sweeps from 0 to full in TOTAL_FRAMES */
-    const p = 1 - (frame / TOTAL_FRAMES);
-    arc.setAttribute('stroke-dashoffset', ARC_CIRCUM * (1 - p));
-
-    /* Cue mark on last 2 frames */
+    /* Arc sweeps 0 → full over 5 frames */
+    const progress = 1 - (frame / 5);
+    arc.setAttribute('stroke-dashoffset', ARC_CIRCUM * (1 - progress));
     cue.style.opacity = frame <= 2 ? '0.9' : '0';
 
     playTick();
@@ -3760,36 +3834,33 @@ function playRevealSound() {
     });
   }
 
-  /* Boot after short delay */
-  setTimeout(() => {
-    bootAudio();
-    startProjectorSound();
-    tick();
-  }, 500);
-})();
-
-/* Called by the CTA button */
-function introBegin() {
-  const overlay = document.getElementById('mf-intro');
-  overlay.classList.add('exit');
-  setTimeout(() => { overlay.style.display = 'none'; }, 1500);
+  tick();
 }
 
-/* ════════════════ PRESENTATION SYSTEM ════════════════ */
+/* Called by "Comenzar" button */
+function introBegin() {
+  const ov = document.getElementById('mf-intro');
+  ov.classList.add('exit');
+  setTimeout(() => { ov.style.display = 'none'; }, 1500);
+}
+
+/* ════════════════════════════════════════════════════════
+   PRESENTATION SLIDE SYSTEM
+════════════════════════════════════════════════════════ */
 const TITLES = [
-  'Inicio','El Problema','La Solución','Cómo Funciona',
-  'Prototipo','Propuesta de Valor','Requisitos',
-  'Historias de Usuario','Modelo E-R','Arquitectura','Cierre'
+  'Inicio', 'El Problema', 'La Solución', 'Cómo Funciona',
+  'Prototipo', 'Propuesta de Valor', 'Requisitos',
+  'Historias de Usuario', 'Modelo E-R', 'Arquitectura', 'Cierre'
 ];
 let cur = 0;
-const TOTAL = 11;
+const TOTAL     = 11;
 const allSlides = document.querySelectorAll('.slide');
 const dotsEl    = document.getElementById('navDots');
 const progFill  = document.getElementById('progFill');
 const curNumEl  = document.getElementById('curNum');
 const lblEl     = document.getElementById('slide-lbl');
 
-/* Build dots */
+/* Build nav dots */
 TITLES.forEach((t, i) => {
   const d = document.createElement('div');
   d.className = 'nav-dot' + (i === 0 ? ' active' : '');
@@ -3800,83 +3871,103 @@ TITLES.forEach((t, i) => {
 
 function goTo(n) {
   if (n < 0 || n >= TOTAL || n === cur) return;
-  allSlides[cur].classList.remove('active');
-  cur = n;
-  const el = allSlides[cur];
 
-  /* Reset fade-up for re-animation */
-  el.querySelectorAll('.fade-up').forEach(e => {
-    e.style.cssText = 'opacity:0;transform:translateY(36px);transition:none;';
+  const leaving  = allSlides[cur];
+  cur = n;
+  const entering = allSlides[cur];
+
+  /* Film-burn transition */
+  leaving.classList.add('burning-out');
+  entering.querySelectorAll('.fade-up').forEach(el => {
+    el.style.cssText = 'opacity:0;transform:translateY(36px);transition:none;';
   });
-  requestAnimationFrame(() => requestAnimationFrame(() => {
-    el.classList.add('active');
-    el.querySelectorAll('.fade-up').forEach(e => { e.style.cssText = ''; });
-    syncUI();
-  }));
+
+  setTimeout(() => {
+    leaving.classList.remove('active', 'burning-out');
+    entering.classList.add('active', 'burning-in');
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      entering.classList.remove('burning-in');
+      entering.querySelectorAll('.fade-up').forEach(el => { el.style.cssText = ''; });
+    }));
+  }, 200);
+
+  syncUI();
 }
 
 function syncUI() {
-  document.querySelectorAll('.nav-dot')
-    .forEach((d,i) => d.classList.toggle('active', i === cur));
+  document.querySelectorAll('.nav-dot').forEach((d, i) => d.classList.toggle('active', i === cur));
   progFill.style.width = ((cur + 1) / TOTAL * 100) + '%';
-  curNumEl.textContent = String(cur + 1).padStart(2,'0');
+  curNumEl.textContent = String(cur + 1).padStart(2, '0');
   lblEl.textContent = TITLES[cur];
 }
 
 document.getElementById('prevBtn').addEventListener('click', () => goTo(cur - 1));
 document.getElementById('nextBtn').addEventListener('click', () => goTo(cur + 1));
 document.addEventListener('keydown', e => {
-  if (['ArrowRight','ArrowDown',' '].includes(e.key)) { e.preventDefault(); goTo(cur+1); }
-  if (['ArrowLeft','ArrowUp'].includes(e.key))         { e.preventDefault(); goTo(cur-1); }
+  if (['ArrowRight', 'ArrowDown', ' '].includes(e.key)) { e.preventDefault(); goTo(cur + 1); }
+  if (['ArrowLeft',  'ArrowUp'       ].includes(e.key)) { e.preventDefault(); goTo(cur - 1); }
 });
-let tx = 0;
-document.addEventListener('touchstart', e => { tx = e.touches[0].clientX; });
+let _tx = 0;
+document.addEventListener('touchstart', e => { _tx = e.touches[0].clientX; });
 document.addEventListener('touchend',   e => {
-  const d = tx - e.changedTouches[0].clientX;
+  const d = _tx - e.changedTouches[0].clientX;
   if (Math.abs(d) > 50) goTo(cur + (d > 0 ? 1 : -1));
 });
 
-/* ════════════════ CURSOR ════════════════ */
-const cur2 = document.getElementById('cursor');
-const ring  = document.getElementById('cursorRing');
-let mx=0,my=0,rx=0,ry=0;
+/* ════════════════════════════════════════════════════════
+   CUSTOM CURSOR (z-index set to 200000 in CSS)
+════════════════════════════════════════════════════════ */
+const curEl  = document.getElementById('cursor');
+const ringEl = document.getElementById('cursorRing');
+let mx = 0, my = 0, rx = 0, ry = 0;
 document.addEventListener('mousemove', e => {
-  mx=e.clientX; my=e.clientY;
-  cur2.style.left=mx+'px'; cur2.style.top=my+'px';
+  mx = e.clientX; my = e.clientY;
+  curEl.style.left = mx + 'px'; curEl.style.top = my + 'px';
 });
-(function loop() {
-  rx+=(mx-rx)*0.14; ry+=(my-ry)*0.14;
-  ring.style.left=rx+'px'; ring.style.top=ry+'px';
-  requestAnimationFrame(loop);
+(function cursorLoop() {
+  rx += (mx - rx) * 0.14; ry += (my - ry) * 0.14;
+  ringEl.style.left = rx + 'px'; ringEl.style.top = ry + 'px';
+  requestAnimationFrame(cursorLoop);
 })();
-const hovSel = 'button,.nav-dot,.rc,.hc,.screen-mockup,.value-card,.pillar,' +
-  '.process-step,.platform-card,.gap-card,.mode-panel,.tech-chip,.tag,' +
-  '.team-member,.doc-item,.diagram-node,#intro-cta';
-document.querySelectorAll(hovSel).forEach(el => {
-  el.addEventListener('mouseenter', () => { cur2.classList.add('view'); ring.classList.add('active'); });
-  el.addEventListener('mouseleave', () => { cur2.classList.remove('view'); ring.classList.remove('active'); });
+
+const hoverTargets = [
+  'button', '.nav-dot', '.rc', '.hac', '.screen-mockup', '.value-card',
+  '.pillar', '.process-step', '.platform-card', '.gap-card', '.mode-panel',
+  '.tech-chip', '.tag', '.team-member', '.doc-item', '.diagram-node',
+  '#gate-click-btn', '#brand-cta'
+].join(',');
+
+document.querySelectorAll(hoverTargets).forEach(el => {
+  el.addEventListener('mouseenter', () => { curEl.classList.add('view');    ringEl.classList.add('active'); });
+  el.addEventListener('mouseleave', () => { curEl.classList.remove('view'); ringEl.classList.remove('active'); });
 });
 
-/* ════════════════ PARALLAX ════════════════ */
+/* ════════════════════════════════════════════════════════
+   PARALLAX
+════════════════════════════════════════════════════════ */
 document.addEventListener('mousemove', e => {
-  document.querySelectorAll('.screen-mockup').forEach((s,i) => {
+  document.querySelectorAll('.screen-mockup').forEach((s, i) => {
     if (!s.matches(':hover')) {
-      const fx=(e.clientX/innerWidth-.5)*30, fy=(e.clientY/innerHeight-.5)*30;
-      s.style.transform=`translate(${fx*(i+1)*.3}px,${fy*(i+1)*.3}px)`;
+      const fx = (e.clientX / innerWidth  - 0.5) * 30;
+      const fy = (e.clientY / innerHeight - 0.5) * 30;
+      s.style.transform = `translate(${fx*(i+1)*0.3}px, ${fy*(i+1)*0.3}px)`;
     }
   });
 });
 
-/* ════════════════ ACCORDION HELPERS ════════════════ */
+/* ════════════════════════════════════════════════════════
+   ACCORDION — toggleCard (closes siblings, opens this)
+════════════════════════════════════════════════════════ */
 function toggleCard(card) {
   const wasOpen = card.classList.contains('open');
-  /* Close siblings */
-  const parent = card.parentElement;
-  parent.querySelectorAll('.rc, .hc').forEach(c => c.classList.remove('open'));
+  /* Close all siblings of the same type in parent */
+  card.parentElement.querySelectorAll('.rc, .hac').forEach(c => c.classList.remove('open'));
   if (!wasOpen) card.classList.add('open');
 }
 
-/* ════════════════ INIT ════════════════ */
+/* ════════════════════════════════════════════════════════
+   INIT
+════════════════════════════════════════════════════════ */
 syncUI();
 </script>
 </body>
