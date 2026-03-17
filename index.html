@@ -369,6 +369,75 @@ body::before {
 .top-btn:hover { border-color: var(--amber); color: var(--amber); }
 .top-btn.on   { border-color: var(--amber); color: var(--amber); background: var(--amber-bg); }
 
+/* ── LEGEND ───────────────────────────────────── */
+#legend {
+  position: fixed;
+  bottom: 22px;
+  right: 22px;
+  background: rgba(19,19,32,0.97);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 18px;
+  z-index: 200;
+  backdrop-filter: blur(18px);
+  box-shadow: 0 10px 40px rgba(0,0,0,0.55);
+  min-width: 190px;
+}
+
+.legend-title {
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  margin-bottom: 11px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.legend-item:last-child { margin-bottom: 0; }
+.legend-item span:last-child {
+  font-size: 11px;
+  color: var(--text-dim);
+  font-family: 'IBM Plex Mono', monospace;
+  white-space: nowrap;
+}
+.legend-item svg { flex-shrink: 0; }
+
+.leg-box-abstract {
+  width: 60px;
+  border: 1px solid var(--border-hi);
+  border-radius: 3px;
+  background: var(--amber-bg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-family: 'IBM Plex Mono', monospace;
+  padding: 3px 4px;
+  gap: 2px;
+}
+.leg-stereo {
+  font-style: italic;
+  font-size: 7.5px;
+  color: var(--amber);
+  opacity: 0.7;
+  white-space: nowrap;
+  line-height: 1.2;
+}
+.leg-classname {
+  font-size: 9px;
+  color: var(--text-dim);
+  font-style: italic;
+  white-space: nowrap;
+  line-height: 1.2;
+}
+
 /* ── PANEL ANIMATION ──────────────────────────── */
 @keyframes panelReveal {
   from { opacity:0; transform:translateY(7px); }
@@ -442,6 +511,60 @@ body::before {
   </div>
   <div class="ctrl-bar"><div class="ctrl-bar-fill" id="ctrlFill" style="width:9%"></div></div>
   <button class="ctrl-btn" id="btnNext" onclick="nextStep()">&#8594;</button>
+</div>
+
+<!-- LEGEND -->
+<div id="legend">
+  <div class="legend-title">Leyenda</div>
+  <div class="legend-item">
+    <svg width="38" height="14" viewBox="0 0 38 14">
+      <line x1="2" y1="7" x2="30" y2="7" stroke="#c49a38" stroke-width="1.5" marker-end="url(#leg-arrow)"/>
+      <defs>
+        <marker id="leg-arrow" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto" markerUnits="userSpaceOnUse">
+          <path d="M0,0 L10,4 L0,8 z" fill="#c49a38"/>
+        </marker>
+      </defs>
+    </svg>
+    <span>Asociacion / Navegacion</span>
+  </div>
+  <div class="legend-item">
+    <svg width="38" height="14" viewBox="0 0 38 14">
+      <defs>
+        <marker id="leg-inherit" markerWidth="13" markerHeight="10" refX="12" refY="5" orient="auto" markerUnits="userSpaceOnUse">
+          <path d="M0,0 L12,5 L0,10 z" fill="none" stroke="#c49a38" stroke-width="1.5"/>
+        </marker>
+      </defs>
+      <line x1="2" y1="7" x2="30" y2="7" stroke="#c49a38" stroke-width="1.5" marker-end="url(#leg-inherit)"/>
+    </svg>
+    <span>Herencia (extends)</span>
+  </div>
+  <div class="legend-item">
+    <svg width="38" height="14" viewBox="0 0 38 14">
+      <defs>
+        <marker id="leg-diamond" markerWidth="14" markerHeight="10" refX="1" refY="5" orient="auto" markerUnits="userSpaceOnUse">
+          <path d="M1,5 L7,1 L13,5 L7,9 z" fill="#c49a38"/>
+        </marker>
+        <marker id="leg-arr2" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto" markerUnits="userSpaceOnUse">
+          <path d="M0,0 L10,4 L0,8 z" fill="#c49a38"/>
+        </marker>
+      </defs>
+      <line x1="4" y1="7" x2="32" y2="7" stroke="#c49a38" stroke-width="1.5" marker-start="url(#leg-diamond)" marker-end="url(#leg-arr2)"/>
+    </svg>
+    <span>Composicion (ciclo de vida)</span>
+  </div>
+  <div class="legend-item">
+    <svg width="38" height="14" viewBox="0 0 38 14">
+      <line x1="2" y1="7" x2="36" y2="7" stroke="#c49a38" stroke-width="1.5" stroke-dasharray="4 3"/>
+    </svg>
+    <span>Asociacion N:M</span>
+  </div>
+  <div class="legend-item abstract-sample">
+    <div class="leg-box-abstract">
+      <span class="leg-stereo">&laquo;abstract&raquo;</span>
+      <span class="leg-classname">NombreClase</span>
+    </div>
+    <span>Clase abstracta</span>
+  </div>
 </div>
 
 <!-- TOP BUTTONS -->
