@@ -333,6 +333,7 @@
   <div class="top-btns">
     <button class="top-btn on" id="ec-bpres" onclick="ecE.setMode('presentation')">Presentacion</button>
     <button class="top-btn"   id="ec-bfree" onclick="ecE.setMode('free')">Vista libre</button>
+    <button class="top-btn"   onclick="ecE.reset()" title="Restablecer posiciones originales" style="font-size:11px;">Restablecer</button>
   </div>
   <div class="legend" id="legend-ec">
     <div class="legend-title">Leyenda</div>
@@ -385,6 +386,7 @@
   <div class="top-btns">
     <button class="top-btn on" id="mf-bpres" onclick="mfE.setMode('presentation')">Presentacion</button>
     <button class="top-btn"   id="mf-bfree" onclick="mfE.setMode('free')">Vista libre</button>
+    <button class="top-btn"   onclick="mfE.reset()" title="Restablecer posiciones originales" style="font-size:11px;">Restablecer</button>
   </div>
   <div class="legend" id="legend-mf">
     <div class="legend-title">Leyenda</div>
@@ -430,33 +432,109 @@ function makeEngine(cfg) {
   let step=0, mode='presentation', scale=initSc, tx=initTx, ty=initTy;
   let boxData={}, panning=false, px0=0,py0=0,tx0=0,ty0=0;
 
+  const STORE_KEY = 'uml-pos-' + p;
+
+  function savePositions() {
+    const pos = {};
+    for (const name of Object.keys(classes)) {
+      if (boxData[name]) pos[name] = {x: boxData[name].x, y: boxData[name].y};
+    }
+    try { localStorage.setItem(STORE_KEY, JSON.stringify(pos)); } catch(e){}
+  }
+
+  function loadPositions() {
+    try {
+      const raw = localStorage.getItem(STORE_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch(e){ return null; }
+  }
+
   function applyT(anim=false) {
     const c=document.getElementById(canvasId);
     c.style.transition=anim?'transform 0.7s cubic-bezier(0.16,1,0.3,1)':'none';
     c.style.transform=`translate(${tx}px,${ty}px) scale(${scale})`;
   }
+
+  function makeDraggable(box, name) {
+    let dragging=false, startX=0, startY=0, origX=0, origY=0;
+    box.addEventListener('mousedown', e => {
+      if (mode !== 'free') return;
+      // Solo iniciar drag desde el header
+      if (!e.target.closest('.class-header')) return;
+      e.stopPropagation();
+      dragging = true;
+      startX = e.clientX; startY = e.clientY;
+      origX = boxData[name].x; origY = boxData[name].y;
+      box.style.zIndex = 50;
+      box.style.transition = 'none';
+      document.body.style.userSelect = 'none';
+    });
+    document.addEventListener('mousemove', e => {
+      if (!dragging) return;
+      const dx = (e.clientX - startX) / scale;
+      const dy = (e.clientY - startY) / scale;
+      const nx = Math.max(0, origX + dx);
+      const ny = Math.max(0, origY + dy);
+      boxData[name].x = nx; boxData[name].y = ny;
+      box.style.left = nx + 'px'; box.style.top = ny + 'px';
+      drawConns();
+      updateDiagram();
+    });
+    document.addEventListener('mouseup', () => {
+      if (!dragging) return;
+      dragging = false;
+      box.style.zIndex = '';
+      document.body.style.userSelect = '';
+      savePositions();
+    });
+  }
+
   function render() {
-    const canvas=document.getElementById(canvasId);
+    const canvas = document.getElementById(canvasId);
+    const saved  = loadPositions();
     for (const [name,d] of Object.entries(classes)) {
-      const box=document.createElement('div');
-      let cls='class-box'+(d.isAbstract?' abstract':'')+(d.isService?' service':'');
-      box.className=cls; box.id=p+'-box-'+name;
-      box.style.left=d.x+'px'; box.style.top=d.y+'px';
-      let html='<div class="class-header">';
+      const sx = saved&&saved[name] ? saved[name].x : d.x;
+      const sy = saved&&saved[name] ? saved[name].y : d.y;
+      const box = document.createElement('div');
+      let cls = 'class-box'+(d.isAbstract?' abstract':'')+(d.isService?' service':'');
+      box.className = cls; box.id = p+'-box-'+name;
+      box.style.left = sx+'px'; box.style.top = sy+'px';
+      box.style.cursor = 'default';
+      let html = '<div class="class-header" style="cursor:grab">';
       if(d.isAbstract) html+='<span class="class-stereotype">&laquo;abstract&raquo;</span>';
       if(d.isService)  html+='<span class="class-stereotype">&laquo;service&raquo;</span>';
       html+=`<div class="class-name">${name.replace(/_/g,' ')}</div></div>`;
       if(d.attrs&&d.attrs.length){html+='<div class="class-section">';d.attrs.forEach(a=>{html+=`<div class="class-member">${a}</div>`;});html+='</div>';}
       if(d.methods&&d.methods.length){html+='<div class="class-section">';d.methods.forEach(m=>{html+=`<div class="class-member is-method">${m}</div>`;});html+='</div>';}
-      box.innerHTML=html; canvas.appendChild(box);
+      box.innerHTML = html;
+      canvas.appendChild(box);
+      makeDraggable(box, name);
     }
   }
+
   function measure() {
+    const saved = loadPositions();
     for (const name of Object.keys(classes)) {
-      const el=document.getElementById(p+'-box-'+name);
+      const el = document.getElementById(p+'-box-'+name);
       if(!el) continue;
-      boxData[name]={x:classes[name].x,y:classes[name].y,w:el.offsetWidth,h:el.offsetHeight};
+      const sx = saved&&saved[name] ? saved[name].x : classes[name].x;
+      const sy = saved&&saved[name] ? saved[name].y : classes[name].y;
+      boxData[name] = {x:sx, y:sy, w:el.offsetWidth, h:el.offsetHeight};
     }
+  }
+
+  function resetPositions() {
+    try { localStorage.removeItem(STORE_KEY); } catch(e){}
+    for (const name of Object.keys(classes)) {
+      const el = document.getElementById(p+'-box-'+name);
+      if(!el) continue;
+      el.style.left = classes[name].x+'px';
+      el.style.top  = classes[name].y+'px';
+      boxData[name].x = classes[name].x;
+      boxData[name].y = classes[name].y;
+    }
+    drawConns();
+    updateDiagram();
   }
   function edge(src,tgt) {
     const s=boxData[src],t=boxData[tgt];
@@ -567,6 +645,7 @@ function makeEngine(cfg) {
   return {
     init(){render();applyT(false);setTimeout(()=>{measure();drawConns();goTo(0,false);},80);},
     remeasure(){measure();drawConns();goTo(0,false);},
+    reset: resetPositions,
     next:()=>goTo(step+1), prev:()=>goTo(step-1), setMode
   };
 }
