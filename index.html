@@ -283,12 +283,12 @@
 
 <!-- ══ SWITCHER (se reemplaza segun diagrama activo) ══ -->
 <div id="sw-ec" id="switcher" style="position:fixed;top:0;left:0;right:0;height:50px;z-index:900;display:flex;align-items:center;justify-content:space-between;padding:0 22px;background:rgba(11,11,21,0.98);border-bottom:1px solid #22223a;backdrop-filter:blur(18px);">
-  <span class="sw-logo" style="color:#c49a38;font-family:'Syne',sans-serif;font-size:15px;font-weight:700;"></span>
+  <span class="sw-logo" style="color:#c49a38;font-family:'Syne',sans-serif;font-size:15px;font-weight:700;">E-Commerce UML</span>
   <div class="sw-tabs" style="display:flex;gap:4px;background:rgba(19,19,32,0.97);border:1px solid #22223a;border-radius:8px;padding:4px;">
     <button class="sw-tab active" id="tab-ec" onclick="switchTo('ec')" style="padding:6px 18px;border-radius:5px;border:none;font-size:12px;font-weight:600;cursor:pointer;font-family:'Syne',sans-serif;background:rgba(196,154,56,0.10);color:#c49a38;border:1px solid rgba(196,154,56,0.4);">E-Commerce</button>
     <button class="sw-tab"       id="tab-mf" onclick="switchTo('mf')"  style="padding:6px 18px;border-radius:5px;border:none;font-size:12px;font-weight:600;cursor:pointer;font-family:'Syne',sans-serif;background:transparent;color:#44445a;">Magic Film</button>
   </div>
-  <span class="sw-badge" style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#44445a;letter-spacing:0.08em;">Diagramas V0.1</span>
+  <span class="sw-badge" style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#44445a;letter-spacing:0.08em;">DIAGRAMAS UML v1.1</span>
 </div>
 
 <!-- ══ DIAGRAMA 1: E-COMMERCE ══ -->
@@ -614,23 +614,29 @@ const EC_ST=[
   {id:'Pago',title:'Pago',concept:'Transaccion Financiera',desc:'Registro de transacciones monetarias asociadas al pedido. Un pedido puede tener multiples pagos para soportar pagos parciales, en cuotas o reembolsos.',points:['Multiples pagos por pedido (relacion 1:N)','Estados: pendiente, completado, fallido, reembolsado','Metodos procesar() y reembolsar() encapsulan la logica','Monto independiente del total (pagos parciales)'],rels:['N:1 Pedido']}
 ];
 
-/* ══ DATOS MAGIC FILM — posiciones rediseñadas en 3 filas ══ */
+/* ══ DATOS MAGIC FILM
+   Layout por columnas para evitar cruces:
+   Fila 1 (y:40):  ServicioTMDB — Pelicula — Analisis — ServicioGemini
+   Fila 2 (y:380): Usuario — Clasificador — Genero
+   Fila 3 (y:720): HistorialAdmin — Favorito — HistorialBusqueda — CapaAnalisis — LogIA
+══ */
 const MF_CL={
-  // Fila superior — entidades de catalogo
-  Usuario:          {x:160, y:40,  attrs:['-int id','-String nombre_usuario','-String email','-String password_hash','-enum rol','-enum nivel_cinefilo','-boolean onboarding_completo'], methods:['+registrar() void','+login() boolean','+actualizarPerfil() void']},
-  Genero:           {x:620, y:40,  attrs:['-int id','-String nombre'], methods:[]},
-  Pelicula:         {x:1050,y:40,  attrs:['-int id','-int tmdb_id','-String titulo','-String director','-int anio','-String sinopsis','-JSON keywords','-enum tipo_analisis','-boolean tipo_forzado'], methods:['+buscar() List','+clasificar() enum']},
-  // Fila media — servicios y logica
-  ServicioTMDB:     {x:160, y:380, isService:true, attrs:['-String apiKey','-String baseUrl'], methods:['+buscarPelicula(titulo) JSON','+obtenerDetalles(id) JSON']},
-  Clasificador:     {x:560, y:380, isAbstract:true, attrs:['-String[] keywordsProfundo','-String[] keywordsEntret.','-int umbralScore'], methods:['+clasificar(p) enum','+calcularScore() int']},
-  Analisis:         {x:1000,y:380, attrs:['-int id','-enum tipo','-String modelo_ia','-enum estado','-boolean eliminado'], methods:['+generar() void','+regenerar() void','+eliminar() void']},
-  ServicioGemini:   {x:1380,y:380, isService:true, attrs:['-String apiKey','-String modelo'], methods:['+generarAnalisis(d) String','+construirPrompt() String']},
-  // Fila inferior — persistencia y trazabilidad
-  Favorito:         {x:60,  y:730, attrs:['-int id','-timestamp guardado_en'], methods:['+guardar() void','+eliminar() void']},
-  HistorialBusqueda:{x:310, y:730, attrs:['-int id','-String termino_buscado','-timestamp buscado_en'], methods:[]},
-  CapaAnalisis:     {x:700, y:730, attrs:['-int id','-enum modo','-enum nombre_capa','-String contenido','-int orden'], methods:['+renderizar() String']},
-  LogIA:            {x:1040,y:730, attrs:['-int id','-String prompt_usado','-int tokens_estimados','-int tiempo_ms'], methods:[]},
-  HistorialAdmin:   {x:1320,y:730, attrs:['-int id','-enum accion','-String entidad','-int entidad_id','-String detalle'], methods:['+registrar() void']}
+  // Fila 1 — flujo de datos externo → interno
+  ServicioTMDB:     {x:60,  y:40,  isService:true,   attrs:['-String apiKey','-String baseUrl'], methods:['+buscarPelicula(titulo) JSON','+obtenerDetalles(id) JSON']},
+  Pelicula:         {x:450, y:40,  attrs:['-int id','-int tmdb_id','-String titulo','-String director','-int anio','-String sinopsis','-JSON keywords','-enum tipo_analisis','-boolean tipo_forzado'], methods:['+buscar() List','+clasificar() enum']},
+  Analisis:         {x:840, y:40,  attrs:['-int id','-enum tipo','-String modelo_ia','-enum estado','-boolean eliminado'], methods:['+generar() void','+regenerar() void','+eliminar() void']},
+  ServicioGemini:   {x:1220,y:40,  isService:true,   attrs:['-String apiKey','-String modelo'], methods:['+generarAnalisis(d) String','+construirPrompt() String']},
+  // Fila 1.5 — Clasificador entre ServicioTMDB y Pelicula, sin cruzar fila 2
+  Clasificador:     {x:200, y:230, isAbstract:true,  attrs:['-String[] keywordsProfundo','-String[] keywordsEntret.','-int umbralScore'], methods:['+clasificar(p) enum','+calcularScore() int']},
+  // Fila 2 — actores y catálogo
+  Usuario:          {x:60,  y:430, attrs:['-int id','-String nombre_usuario','-String email','-String password_hash','-enum rol','-enum nivel_cinefilo','-boolean onboarding_completo'], methods:['+registrar() void','+login() boolean','+actualizarPerfil() void']},
+  Genero:           {x:640, y:430, attrs:['-int id','-String nombre'], methods:[]},
+  // Fila 3 — persistencia y trazabilidad (debajo de su clase padre)
+  HistorialAdmin:   {x:60,  y:790, attrs:['-int id','-enum accion','-String entidad','-int entidad_id','-String detalle'], methods:['+registrar() void']},
+  Favorito:         {x:295, y:790, attrs:['-int id','-timestamp guardado_en'], methods:['+guardar() void','+eliminar() void']},
+  HistorialBusqueda:{x:530, y:790, attrs:['-int id','-String termino_buscado','-timestamp buscado_en'], methods:[]},
+  CapaAnalisis:     {x:800, y:790, attrs:['-int id','-enum modo','-enum nombre_capa','-String contenido','-int orden'], methods:['+renderizar() String']},
+  LogIA:            {x:1060,y:790, attrs:['-int id','-String prompt_usado','-int tokens_estimados','-int tiempo_ms'], methods:[]}
 };
 const MF_CO=[
   {id:'c1', from:'Usuario',to:'Genero',type:'assoc',fromMul:'N',toMul:'M',label:'prefiere',revealAt:1,purple:false},
