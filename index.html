@@ -3,1094 +3,691 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Diagrama UML</title>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;1,400&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<title>Diagramas UML</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@700&family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;1,400&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
-:root {
-  --bg:          #0b0b15;
-  --surface:     #131320;
-  --surface2:    #1a1a2c;
-  --border:      #22223a;
-  --border-hi:   #c49a38;
-  --amber:       #c49a38;
-  --amber-bg:    rgba(196,154,56,0.10);
-  --amber-glow:  rgba(196,154,56,0.35);
-  --violet:      #7c6fe0;
-  --violet-bg:   rgba(124,111,224,0.15);
-  --text:        #e2e2f0;
-  --text-dim:    #7a7a9a;
-  --text-muted:  #44445a;
-  --method:      rgba(196,154,56,0.75);
-  --line-conn:   #c49a38;
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+
+/* ── SWITCHER BAR ── */
+#switcher{
+  position:fixed;top:0;left:0;right:0;height:50px;
+  z-index:900;display:flex;align-items:center;
+  justify-content:space-between;padding:0 22px;
+}
+.sw-logo{font-size:15px;font-weight:700;letter-spacing:-0.02em;}
+.sw-tabs{display:flex;gap:4px;border-radius:8px;padding:4px;}
+.sw-tab{
+  padding:6px 18px;border-radius:5px;border:none;
+  font-size:12px;font-weight:600;cursor:pointer;
+  transition:all 0.22s ease;white-space:nowrap;
+}
+.sw-badge{font-size:10px;letter-spacing:0.08em;}
+
+/* ── WRAPPERS ── */
+.diagram-wrap{position:fixed;inset:50px 0 0 0;display:none;}
+.diagram-wrap.active{display:block;}
+
+/* ── VIEWPORT / CANVAS ── */
+.viewport{position:absolute;inset:0;z-index:1;cursor:default;}
+.viewport.pannable{cursor:grab;}
+.viewport.panning{cursor:grabbing;}
+.canvas{position:absolute;width:2000px;height:1200px;transform-origin:0 0;}
+.svg-layer{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible;}
+
+/* ── CLASS BOX — BASE ── */
+.class-box{
+  position:absolute;width:210px;
+  border-radius:7px;overflow:hidden;
+  opacity:0;pointer-events:none;
+  transition:opacity 0.42s ease,border-color 0.42s ease,box-shadow 0.42s ease;
+}
+.class-box.visible{opacity:1;pointer-events:auto;}
+.class-box.revealed{opacity:0.38;}
+.class-name{font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;}
+.class-box.abstract .class-name{font-style:italic;}
+.class-stereotype{
+  display:block;font-family:'IBM Plex Mono',monospace;
+  font-size:8px;opacity:0.7;letter-spacing:0.07em;margin-bottom:3px;
+}
+.class-section{padding:7px 13px;border-bottom-width:1px;border-bottom-style:solid;}
+.class-section:last-child{border-bottom:none;}
+.class-member{font-family:'IBM Plex Mono',monospace;font-size:10px;line-height:1.9;}
+
+/* ── PANEL BASE ── */
+.panel{
+  position:absolute;top:16px;left:16px;width:345px;
+  border-radius:11px;z-index:200;
+  max-height:calc(100vh - 120px);overflow-y:auto;
+  transition:transform 0.48s cubic-bezier(0.16,1,0.3,1),opacity 0.38s;
+}
+.panel.hidden{transform:translateX(-385px);opacity:0;pointer-events:none;}
+.panel::-webkit-scrollbar{width:3px;}
+.panel-topbar{height:3px;border-radius:11px 11px 0 0;}
+.panel-body{padding:20px 22px 22px;}
+.panel-meta{display:flex;align-items:center;gap:11px;margin-bottom:15px;}
+.panel-num{
+  width:34px;height:34px;border-radius:7px;
+  display:flex;align-items:center;justify-content:center;
+  font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:600;flex-shrink:0;
+}
+.panel-concept{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;margin-top:2px;}
+.panel-step-of{font-size:10px;margin-top:2px;}
+.panel-title{font-size:20px;font-weight:800;margin-bottom:9px;line-height:1.15;letter-spacing:-0.025em;}
+.panel-desc{font-size:12.5px;line-height:1.75;margin-bottom:15px;}
+.panel-section-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.14em;margin-bottom:8px;}
+.panel-points{list-style:none;margin-bottom:15px;}
+.panel-points li{font-size:12px;padding:5px 0 5px 15px;position:relative;line-height:1.55;border-bottom-width:1px;border-bottom-style:solid;}
+.panel-points li:last-child{border-bottom:none;}
+.panel-points li::before{content:'';position:absolute;left:0;top:11px;width:5px;height:5px;border-radius:50%;opacity:0.55;}
+.panel-relations-area{padding-top:13px;border-top-width:1px;border-top-style:solid;}
+.rel-chip{display:inline-block;padding:3px 9px;border-radius:4px;font-family:'IBM Plex Mono',monospace;font-size:10px;margin:3px 3px 3px 0;}
+.panel-kbd{margin-top:15px;padding-top:11px;border-top-width:1px;border-top-style:solid;font-size:10px;display:flex;gap:13px;}
+.kbd-key{display:inline-block;padding:1px 6px;border-radius:3px;font-family:'IBM Plex Mono',monospace;font-size:9px;margin-right:3px;}
+
+/* ── CONTROLS ── */
+.controls{
+  position:absolute;bottom:18px;left:50%;transform:translateX(-50%);
+  display:flex;align-items:center;gap:13px;
+  border-radius:100px;padding:9px 18px;z-index:200;
+}
+.ctrl-btn{
+  width:36px;height:36px;border-radius:50%;background:transparent;
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;font-size:14px;transition:all 0.2s;
+}
+.ctrl-btn:disabled{opacity:0.14;cursor:not-allowed;}
+.ctrl-info{text-align:center;min-width:128px;}
+.ctrl-count{font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:500;letter-spacing:0.05em;}
+.ctrl-name{font-size:11px;margin-top:2px;}
+.ctrl-bar{width:108px;height:3px;border-radius:3px;overflow:hidden;}
+.ctrl-bar-fill{height:100%;border-radius:3px;transition:width 0.44s cubic-bezier(0.16,1,0.3,1);}
+
+/* ── TOP BUTTONS ── */
+.top-btns{position:absolute;top:16px;right:16px;display:flex;gap:7px;z-index:200;}
+.top-btn{
+  padding:8px 15px;border-radius:7px;
+  font-size:12px;font-weight:600;cursor:pointer;transition:all 0.2s;
 }
 
-*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+/* ── LEGEND ── */
+.legend{
+  position:absolute;bottom:18px;right:16px;
+  border-radius:10px;padding:13px 16px;z-index:200;min-width:185px;
+}
+.legend-title{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.14em;margin-bottom:10px;}
+.legend-item{display:flex;align-items:center;gap:9px;margin-bottom:7px;}
+.legend-item:last-child{margin-bottom:0;}
+.legend-item span:last-child{font-size:10.5px;font-family:'IBM Plex Mono',monospace;white-space:nowrap;}
+.legend-item svg{flex-shrink:0;}
 
-body {
-  font-family: 'Syne', sans-serif;
-  background: var(--bg);
-  color: var(--text);
-  overflow: hidden;
-  height: 100vh;
-}
+@keyframes panelReveal{from{opacity:0;transform:translateY(7px);}to{opacity:1;transform:translateY(0);}}
+.panel-anim{animation:panelReveal 0.32s ease forwards;}
 
-body::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  background-image: radial-gradient(circle, rgba(120,120,200,0.07) 1px, transparent 1px);
-  background-size: 26px 26px;
-  pointer-events: none;
-  z-index: 0;
+/* ══════════════════════════════════════════════
+   TEMA E-COMMERCE — azul oscuro/violeta (original)
+══════════════════════════════════════════════ */
+#wrap-ec{
+  background:#0b0b15;
+  font-family:'Syne',sans-serif;
 }
+#wrap-ec::before{
+  content:'';position:absolute;inset:0;
+  background-image:radial-gradient(circle,rgba(120,120,200,0.07) 1px,transparent 1px);
+  background-size:26px 26px;pointer-events:none;
+}
+#sw-ec .sw-logo{color:#c49a38;font-family:'Syne',sans-serif;}
+#sw-ec .sw-tabs{background:rgba(19,19,32,0.97);border:1px solid #22223a;}
+#sw-ec .sw-tab{color:#7a7a9a;background:transparent;border:none;font-family:'Syne',sans-serif;}
+#sw-ec .sw-tab:hover{color:#c49a38;}
+#sw-ec .sw-tab.active{background:rgba(196,154,56,0.10);color:#c49a38;border:1px solid rgba(196,154,56,0.4);}
+#sw-ec .sw-badge{color:#44445a;font-family:'IBM Plex Mono',monospace;}
 
-/* ── VIEWPORT & CANVAS ────────────────────────── */
-#viewport {
-  position: fixed;
-  inset: 0;
-  z-index: 1;
-  cursor: default;
-}
-#viewport.pannable { cursor: grab; }
-#viewport.panning  { cursor: grabbing; }
+/* Cajas E-Commerce */
+#wrap-ec .class-box{background:#131320;border:1.5px solid #22223a;}
+#wrap-ec .class-box.active{border-color:#c49a38;box-shadow:0 0 0 1px #c49a38,0 0 28px rgba(196,154,56,0.35),0 6px 24px rgba(0,0,0,0.65);}
+#wrap-ec .class-header{padding:10px 13px 9px;background:rgba(196,154,56,0.10);border-bottom:1px solid #22223a;}
+#wrap-ec .class-box.active .class-header{background:rgba(196,154,56,0.14);}
+#wrap-ec .class-stereotype{color:#c49a38;}
+#wrap-ec .class-name{color:#e2e2f0;}
+#wrap-ec .class-section{border-bottom-color:rgba(34,34,58,0.55);}
+#wrap-ec .class-member{color:#7a7a9a;}
+#wrap-ec .class-member.is-method{color:rgba(196,154,56,0.75);}
 
-#canvas {
-  position: absolute;
-  width: 1500px;
-  height: 950px;
-  transform-origin: 0 0;
-}
+/* Panel E-Commerce */
+#panel-ec{background:rgba(19,19,32,0.97);border:1px solid #22223a;box-shadow:0 24px 60px rgba(0,0,0,0.65);backdrop-filter:blur(18px);}
+#panel-ec .panel-topbar{background:linear-gradient(90deg,#c49a38,rgba(196,154,56,0.2));}
+#panel-ec .panel-num{background:rgba(196,154,56,0.10);border:1px solid rgba(196,154,56,0.45);color:#c49a38;}
+#panel-ec .panel-logo{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:#c49a38;}
+#panel-ec .panel-concept{color:#44445a;}
+#panel-ec .panel-step-of{color:#44445a;}
+#panel-ec .panel-title{color:#e2e2f0;}
+#panel-ec .panel-desc{color:#7a7a9a;}
+#panel-ec .panel-section-label{color:#44445a;}
+#panel-ec .panel-points li{color:#7a7a9a;border-bottom-color:rgba(34,34,58,0.5);}
+#panel-ec .panel-points li::before{background:#c49a38;}
+#panel-ec .panel-relations-area{border-top-color:#22223a;}
+#panel-ec .rel-chip{background:rgba(124,111,224,0.15);border:1px solid rgba(124,111,224,0.35);color:#7c6fe0;}
+#panel-ec .panel-kbd{border-top-color:#22223a;color:#44445a;}
+#panel-ec .kbd-key{background:#1a1a2c;border:1px solid #22223a;color:#7a7a9a;}
+#panel-ec::-webkit-scrollbar-thumb{background:#22223a;}
 
-/* ── SVG CONNECTIONS ──────────────────────────── */
-#svg-layer {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  overflow: visible;
-}
+/* Controls E-Commerce */
+#ctrl-ec{background:rgba(19,19,32,0.97);border:1px solid #22223a;box-shadow:0 10px 40px rgba(0,0,0,0.55);backdrop-filter:blur(18px);}
+#ctrl-ec .ctrl-btn{border:1px solid #22223a;color:#7a7a9a;}
+#ctrl-ec .ctrl-btn:hover:not(:disabled){border-color:#c49a38;color:#c49a38;background:rgba(196,154,56,0.10);}
+#ctrl-ec .ctrl-count{color:#c49a38;}
+#ctrl-ec .ctrl-name{color:#7a7a9a;}
+#ctrl-ec .ctrl-bar{background:#22223a;}
+#ctrl-ec .ctrl-bar-fill{background:#c49a38;}
 
-/* ── CLASS BOXES ──────────────────────────────── */
-.class-box {
-  position: absolute;
-  width: 210px;
-  background: var(--surface);
-  border: 1.5px solid var(--border);
-  border-radius: 7px;
-  overflow: hidden;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.45s ease, border-color 0.45s ease, box-shadow 0.45s ease;
-}
+/* Top buttons E-Commerce */
+#wrap-ec .top-btns .top-btn{background:rgba(19,19,32,0.97);border:1px solid #22223a;color:#7a7a9a;font-family:'Syne',sans-serif;backdrop-filter:blur(12px);}
+#wrap-ec .top-btns .top-btn:hover{border-color:#c49a38;color:#c49a38;}
+#wrap-ec .top-btns .top-btn.on{border-color:#c49a38;color:#c49a38;background:rgba(196,154,56,0.10);}
 
-.class-box.visible   { opacity: 1; pointer-events: auto; }
-.class-box.active    {
-  border-color: var(--border-hi);
-  box-shadow: 0 0 0 1px var(--border-hi), 0 0 28px var(--amber-glow), 0 6px 24px rgba(0,0,0,0.65);
-}
-.class-box.revealed  { opacity: 0.42; }
+/* Legend E-Commerce */
+#legend-ec{background:rgba(19,19,32,0.97);border:1px solid #22223a;box-shadow:0 10px 40px rgba(0,0,0,0.55);backdrop-filter:blur(18px);}
+#legend-ec .legend-title{color:#44445a;}
+#legend-ec .legend-item span:last-child{color:#7a7a9a;}
 
-.class-header {
-  padding: 10px 13px 9px;
-  background: var(--amber-bg);
-  border-bottom: 1px solid var(--border);
+/* ══════════════════════════════════════════════
+   TEMA MAGIC FILM — negro/dorado
+══════════════════════════════════════════════ */
+#wrap-mf{
+  background:#0a0a0a;
+  font-family:'Inter',-apple-system,sans-serif;
 }
-.class-box.active .class-header { background: rgba(196,154,56,0.14); }
+#wrap-mf::before{
+  content:'';position:absolute;inset:0;
+  background-image:radial-gradient(circle,rgba(245,166,35,0.04) 1px,transparent 1px);
+  background-size:28px 28px;pointer-events:none;
+}
+#wrap-mf::after{
+  content:'';position:absolute;inset:0;
+  background:
+    radial-gradient(ellipse at 10% 60%,rgba(245,166,35,0.06) 0%,transparent 45%),
+    radial-gradient(ellipse at 90% 15%,rgba(155,89,182,0.05) 0%,transparent 40%);
+  pointer-events:none;
+}
+#sw-mf .sw-logo{color:#f5a623;font-family:'Playfair Display',serif;font-weight:700;}
+#sw-mf .sw-tabs{background:rgba(17,17,17,0.97);border:1px solid #333;}
+#sw-mf .sw-tab{color:#666;background:transparent;border:none;font-family:'Inter',sans-serif;}
+#sw-mf .sw-tab:hover{color:#a0a0a0;}
+#sw-mf .sw-tab.active{background:rgba(245,166,35,0.09);color:#f5a623;border:1px solid rgba(245,166,35,0.3);}
+#sw-mf .sw-badge{color:#555;font-family:'IBM Plex Mono',monospace;}
 
-.class-stereotype {
-  display: block;
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 8.5px;
-  color: var(--amber);
-  opacity: 0.7;
-  letter-spacing: 0.06em;
-  margin-bottom: 3px;
-}
+/* Cajas Magic Film */
+#wrap-mf .class-box{background:#111;border:1.5px solid #333;}
+#wrap-mf .class-box.active{border-color:#f5a623;box-shadow:0 0 0 1px #f5a623,0 0 32px rgba(245,166,35,0.28),0 8px 30px rgba(0,0,0,0.7);}
+#wrap-mf .class-box.service{border-left:3px solid #9b59b6;}
+#wrap-mf .class-box.service.active{border-color:#9b59b6;box-shadow:0 0 0 1px #9b59b6,0 0 28px rgba(155,89,182,0.3),0 8px 30px rgba(0,0,0,0.7);}
+#wrap-mf .class-header{padding:11px 14px 10px;background:rgba(245,166,35,0.08);border-bottom:1px solid #333;}
+#wrap-mf .class-box.active .class-header{background:rgba(245,166,35,0.13);}
+#wrap-mf .class-box.service .class-header{background:rgba(155,89,182,0.12);}
+#wrap-mf .class-box.service.active .class-header{background:rgba(155,89,182,0.18);}
+#wrap-mf .class-stereotype{color:#f5a623;}
+#wrap-mf .class-box.service .class-stereotype{color:#9b59b6;}
+#wrap-mf .class-name{color:#fff;}
+#wrap-mf .class-section{border-bottom-color:rgba(51,51,51,0.5);}
+#wrap-mf .class-member{color:#a0a0a0;}
+#wrap-mf .class-member.is-method{color:rgba(245,166,35,0.85);}
 
-.class-name {
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 12.5px;
-  font-weight: 600;
-  color: var(--text);
-  letter-spacing: -0.01em;
-}
-.class-box.abstract .class-name { font-style: italic; }
+/* Panel Magic Film */
+#panel-mf{background:rgba(10,10,10,0.97);border:1px solid #333;box-shadow:0 24px 70px rgba(0,0,0,0.75);backdrop-filter:blur(20px);}
+#panel-mf .panel-topbar{background:linear-gradient(90deg,#f5a623,rgba(245,166,35,0.1));}
+#panel-mf .panel-num{background:rgba(245,166,35,0.09);border:1px solid rgba(245,166,35,0.38);color:#f5a623;}
+#panel-mf .panel-logo{font-family:'Playfair Display',serif;font-size:14px;font-weight:700;color:#f5a623;}
+#panel-mf .panel-concept{color:#555;}
+#panel-mf .panel-step-of{color:#555;}
+#panel-mf .panel-title{font-family:'Playfair Display',serif;color:#fff;}
+#panel-mf .panel-desc{color:#a0a0a0;}
+#panel-mf .panel-section-label{color:#555;}
+#panel-mf .panel-points li{color:#a0a0a0;border-bottom-color:rgba(51,51,51,0.5);}
+#panel-mf .panel-points li::before{background:#f5a623;}
+#panel-mf .panel-relations-area{border-top-color:#333;}
+#panel-mf .rel-chip{background:rgba(155,89,182,0.13);border:1px solid rgba(155,89,182,0.32);color:#9b59b6;}
+#panel-mf .panel-kbd{border-top-color:#333;color:#555;}
+#panel-mf .kbd-key{background:#1a1a1a;border:1px solid #333;color:#777;}
+#panel-mf::-webkit-scrollbar-thumb{background:#333;}
 
-.class-section {
-  padding: 7px 13px;
-  border-bottom: 1px solid rgba(34,34,58,0.55);
-}
-.class-section:last-child { border-bottom: none; }
+/* Controls Magic Film */
+#ctrl-mf{background:rgba(10,10,10,0.97);border:1px solid #333;box-shadow:0 10px 40px rgba(0,0,0,0.6);backdrop-filter:blur(20px);}
+#ctrl-mf .ctrl-btn{border:1px solid #333;color:#777;}
+#ctrl-mf .ctrl-btn:hover:not(:disabled){border-color:#f5a623;color:#f5a623;background:rgba(245,166,35,0.09);}
+#ctrl-mf .ctrl-count{color:#f5a623;}
+#ctrl-mf .ctrl-name{color:#a0a0a0;}
+#ctrl-mf .ctrl-bar{background:#333;}
+#ctrl-mf .ctrl-bar-fill{background:linear-gradient(90deg,#f5a623,rgba(245,166,35,0.5));}
 
-.class-member {
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 10.5px;
-  color: var(--text-dim);
-  line-height: 1.85;
-}
-.class-member.is-method { color: var(--method); }
+/* Top buttons Magic Film */
+#wrap-mf .top-btns .top-btn{background:rgba(10,10,10,0.97);border:1px solid #333;color:#777;font-family:'Inter',sans-serif;backdrop-filter:blur(12px);}
+#wrap-mf .top-btns .top-btn:hover{border-color:#f5a623;color:#f5a623;}
+#wrap-mf .top-btns .top-btn.on{border-color:#f5a623;color:#f5a623;background:rgba(245,166,35,0.09);}
 
-/* ── LEFT PANEL ───────────────────────────────── */
-#panel {
-  position: fixed;
-  top: 22px;
-  left: 22px;
-  width: 350px;
-  background: rgba(19,19,32,0.97);
-  border: 1px solid var(--border);
-  border-radius: 11px;
-  z-index: 200;
-  backdrop-filter: blur(18px);
-  box-shadow: 0 24px 60px rgba(0,0,0,0.65);
-  max-height: calc(100vh - 110px);
-  overflow-y: auto;
-  transition: transform 0.5s cubic-bezier(0.16,1,0.3,1), opacity 0.4s;
+/* Legend Magic Film */
+#legend-mf{background:rgba(10,10,10,0.97);border:1px solid #333;box-shadow:0 10px 40px rgba(0,0,0,0.6);backdrop-filter:blur(20px);}
+#legend-mf .legend-title{color:#555;}
+#legend-mf .legend-item span:last-child{color:#a0a0a0;}
+.leg-box-service{
+  width:58px;border:1px solid #9b59b6;border-left:3px solid #9b59b6;
+  border-radius:3px;background:rgba(155,89,182,0.13);
+  display:flex;flex-direction:column;align-items:center;
+  justify-content:center;flex-shrink:0;
+  font-family:'IBM Plex Mono',monospace;padding:3px 4px;gap:2px;
 }
-#panel.hidden { transform: translateX(-390px); opacity: 0; pointer-events: none; }
-#panel::-webkit-scrollbar { width: 3px; }
-#panel::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
-
-.panel-topbar {
-  height: 3px;
-  background: linear-gradient(90deg, var(--amber), rgba(196,154,56,0.2));
-  border-radius: 11px 11px 0 0;
-}
-
-.panel-body { padding: 22px 24px 24px; }
-
-.panel-meta {
-  display: flex;
-  align-items: center;
-  gap: 11px;
-  margin-bottom: 18px;
-}
-
-.panel-num {
-  width: 34px;
-  height: 34px;
-  border-radius: 7px;
-  background: var(--amber-bg);
-  border: 1px solid rgba(196,154,56,0.45);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--amber);
-  flex-shrink: 0;
-}
-
-.panel-concept {
-  font-size: 9.5px;
-  font-weight: 700;
-  color: var(--amber);
-  text-transform: uppercase;
-  letter-spacing: 0.13em;
-}
-
-.panel-step-of {
-  font-size: 10px;
-  color: var(--text-muted);
-  margin-top: 3px;
-}
-
-.panel-content { }
-
-.panel-title {
-  font-size: 21px;
-  font-weight: 800;
-  color: var(--text);
-  margin-bottom: 10px;
-  letter-spacing: -0.025em;
-  line-height: 1.15;
-}
-
-.panel-desc {
-  font-size: 13px;
-  color: var(--text-dim);
-  line-height: 1.75;
-  margin-bottom: 18px;
-}
-
-.panel-section-label {
-  font-size: 9px;
-  font-weight: 700;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.14em;
-  margin-bottom: 9px;
-}
-
-.panel-points {
-  list-style: none;
-  margin-bottom: 18px;
-}
-.panel-points li {
-  font-size: 12.5px;
-  color: var(--text-dim);
-  padding: 5px 0 5px 16px;
-  position: relative;
-  line-height: 1.55;
-  border-bottom: 1px solid rgba(34,34,58,0.5);
-}
-.panel-points li:last-child { border-bottom: none; }
-.panel-points li::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 11px;
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: var(--amber);
-  opacity: 0.55;
-}
-
-.panel-relations-area {
-  padding-top: 14px;
-  border-top: 1px solid var(--border);
-}
-
-.rel-chip {
-  display: inline-block;
-  padding: 3px 9px;
-  background: var(--violet-bg);
-  border: 1px solid rgba(124,111,224,0.35);
-  border-radius: 4px;
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 10px;
-  color: var(--violet);
-  margin: 3px 3px 3px 0;
-}
-
-.panel-kbd {
-  margin-top: 18px;
-  padding-top: 12px;
-  border-top: 1px solid var(--border);
-  font-size: 10px;
-  color: var(--text-muted);
-  display: flex;
-  gap: 14px;
-}
-.kbd-key {
-  display: inline-block;
-  padding: 1px 6px;
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  border-radius: 3px;
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 9px;
-  color: var(--text-dim);
-  margin-right: 3px;
-}
-
-/* ── BOTTOM CONTROLS ──────────────────────────── */
-#controls {
-  position: fixed;
-  bottom: 22px;
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  background: rgba(19,19,32,0.97);
-  border: 1px solid var(--border);
-  border-radius: 100px;
-  padding: 10px 20px;
-  z-index: 200;
-  backdrop-filter: blur(18px);
-  box-shadow: 0 10px 40px rgba(0,0,0,0.55);
-}
-
-.ctrl-btn {
-  width: 38px; height: 38px;
-  border-radius: 50%;
-  background: transparent;
-  border: 1px solid var(--border);
-  color: var(--text-dim);
-  display: flex; align-items: center; justify-content: center;
-  cursor: pointer;
-  font-size: 15px;
-  transition: all 0.2s;
-  line-height: 1;
-}
-.ctrl-btn:hover:not(:disabled) { border-color: var(--amber); color: var(--amber); background: var(--amber-bg); }
-.ctrl-btn:disabled { opacity: 0.18; cursor: not-allowed; }
-
-.ctrl-info { text-align: center; min-width: 130px; }
-.ctrl-count {
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 11px;
-  font-weight: 500;
-  color: var(--amber);
-  letter-spacing: 0.05em;
-}
-.ctrl-name { font-size: 12px; color: var(--text-dim); margin-top: 2px; }
-
-.ctrl-bar {
-  width: 110px;
-  height: 3px;
-  background: var(--border);
-  border-radius: 3px;
-  overflow: hidden;
-}
-.ctrl-bar-fill {
-  height: 100%;
-  background: var(--amber);
-  border-radius: 3px;
-  transition: width 0.45s cubic-bezier(0.16,1,0.3,1);
-}
-
-/* ── TOP RIGHT ────────────────────────────────── */
-#top-btns {
-  position: fixed;
-  top: 22px;
-  right: 22px;
-  display: flex;
-  gap: 8px;
-  z-index: 200;
-}
-.top-btn {
-  padding: 9px 17px;
-  border-radius: 7px;
-  border: 1px solid var(--border);
-  background: rgba(19,19,32,0.97);
-  color: var(--text-dim);
-  font-family: 'Syne', sans-serif;
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-  backdrop-filter: blur(12px);
-  letter-spacing: 0.01em;
-}
-.top-btn:hover { border-color: var(--amber); color: var(--amber); }
-.top-btn.on   { border-color: var(--amber); color: var(--amber); background: var(--amber-bg); }
-
-/* ── LEGEND ───────────────────────────────────── */
-#legend {
-  position: fixed;
-  bottom: 22px;
-  right: 22px;
-  background: rgba(19,19,32,0.97);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 14px 18px;
-  z-index: 200;
-  backdrop-filter: blur(18px);
-  box-shadow: 0 10px 40px rgba(0,0,0,0.55);
-  min-width: 190px;
-}
-
-.legend-title {
-  font-size: 9px;
-  font-weight: 700;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.14em;
-  margin-bottom: 11px;
-}
-
-.legend-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 8px;
-}
-.legend-item:last-child { margin-bottom: 0; }
-.legend-item span:last-child {
-  font-size: 11px;
-  color: var(--text-dim);
-  font-family: 'IBM Plex Mono', monospace;
-  white-space: nowrap;
-}
-.legend-item svg { flex-shrink: 0; }
-
-.leg-box-abstract {
-  width: 60px;
-  border: 1px solid var(--border-hi);
-  border-radius: 3px;
-  background: var(--amber-bg);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  font-family: 'IBM Plex Mono', monospace;
-  padding: 3px 4px;
-  gap: 2px;
-}
-.leg-stereo {
-  font-style: italic;
-  font-size: 7.5px;
-  color: var(--amber);
-  opacity: 0.7;
-  white-space: nowrap;
-  line-height: 1.2;
-}
-.leg-classname {
-  font-size: 9px;
-  color: var(--text-dim);
-  font-style: italic;
-  white-space: nowrap;
-  line-height: 1.2;
-}
-
-/* ── PANEL ANIMATION ──────────────────────────── */
-@keyframes panelReveal {
-  from { opacity:0; transform:translateY(7px); }
-  to   { opacity:1; transform:translateY(0); }
-}
-.panel-anim { animation: panelReveal 0.35s ease forwards; }
+.leg-stereo{font-size:7px;color:#9b59b6;opacity:0.8;white-space:nowrap;}
+.leg-classname{font-size:9px;color:#a0a0a0;white-space:nowrap;}
 </style>
 </head>
 <body>
 
-<!-- VIEWPORT -->
-<div id="viewport">
-  <div id="canvas">
-    <svg id="svg-layer">
-      <defs>
-        <!-- Arrow (open arrowhead at target) -->
-        <marker id="m-arrow" markerWidth="10" markerHeight="8"
-                refX="9" refY="4" orient="auto" markerUnits="userSpaceOnUse">
-          <path d="M0,0 L10,4 L0,8 z" fill="#c49a38"/>
-        </marker>
-        <!-- Inheritance (hollow triangle at parent) -->
-        <marker id="m-inherit" markerWidth="13" markerHeight="10"
-                refX="12" refY="5" orient="auto" markerUnits="userSpaceOnUse">
-          <path d="M0,0 L12,5 L0,10 z" fill="none" stroke="#c49a38" stroke-width="1.5"/>
-        </marker>
-        <!-- Composition diamond at source -->
-        <marker id="m-diamond" markerWidth="14" markerHeight="10"
-                refX="1" refY="5" orient="auto" markerUnits="userSpaceOnUse">
-          <path d="M1,5 L7,1 L13,5 L7,9 z" fill="#c49a38"/>
-        </marker>
-      </defs>
-    </svg>
-    <!-- class boxes injected by JS -->
+<!-- ══ SWITCHER (se reemplaza segun diagrama activo) ══ -->
+<div id="sw-ec" id="switcher" style="position:fixed;top:0;left:0;right:0;height:50px;z-index:900;display:flex;align-items:center;justify-content:space-between;padding:0 22px;background:rgba(11,11,21,0.98);border-bottom:1px solid #22223a;backdrop-filter:blur(18px);">
+  <span class="sw-logo" style="color:#c49a38;font-family:'Syne',sans-serif;font-size:15px;font-weight:700;">E-Commerce UML</span>
+  <div class="sw-tabs" style="display:flex;gap:4px;background:rgba(19,19,32,0.97);border:1px solid #22223a;border-radius:8px;padding:4px;">
+    <button class="sw-tab active" id="tab-ec" onclick="switchTo('ec')" style="padding:6px 18px;border-radius:5px;border:none;font-size:12px;font-weight:600;cursor:pointer;font-family:'Syne',sans-serif;background:rgba(196,154,56,0.10);color:#c49a38;border:1px solid rgba(196,154,56,0.4);">E-Commerce</button>
+    <button class="sw-tab"       id="tab-mf" onclick="switchTo('mf')"  style="padding:6px 18px;border-radius:5px;border:none;font-size:12px;font-weight:600;cursor:pointer;font-family:'Syne',sans-serif;background:transparent;color:#44445a;">Magic Film</button>
   </div>
+  <span class="sw-badge" style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#44445a;letter-spacing:0.08em;">DIAGRAMAS UML v1.1</span>
 </div>
 
-<!-- PANEL -->
-<div id="panel">
-  <div class="panel-topbar"></div>
-  <div class="panel-body">
-    <div class="panel-meta">
-      <div class="panel-num" id="pNum">01</div>
-      <div>
-        <div class="panel-concept" id="pConcept">-</div>
-        <div class="panel-step-of" id="pStepOf">Paso 1 de 11</div>
+<!-- ══ DIAGRAMA 1: E-COMMERCE ══ -->
+<div id="wrap-ec" class="diagram-wrap active">
+  <div class="viewport" id="vp-ec">
+    <div class="canvas" id="cv-ec">
+      <svg class="svg-layer" id="svg-ec">
+        <defs>
+          <marker id="ec-arr"  markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L10,4 L0,8 z" fill="#c49a38"/></marker>
+          <marker id="ec-inh"  markerWidth="13" markerHeight="10" refX="12" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L12,5 L0,10 z" fill="none" stroke="#c49a38" stroke-width="1.5"/></marker>
+          <marker id="ec-dia"  markerWidth="14" markerHeight="10" refX="1" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M1,5 L7,1 L13,5 L7,9 z" fill="#c49a38"/></marker>
+        </defs>
+      </svg>
+    </div>
+  </div>
+  <div class="panel" id="panel-ec">
+    <div class="panel-topbar"></div>
+    <div class="panel-body">
+      <div class="panel-meta">
+        <div class="panel-num" id="ec-num">01</div>
+        <div><div class="panel-logo">E-Commerce</div><div class="panel-concept" id="ec-concept">-</div><div class="panel-step-of" id="ec-stepof">Paso 1 de 11</div></div>
       </div>
-    </div>
-    <div id="panel-content" class="panel-content">
-      <div class="panel-title" id="pTitle">-</div>
-      <div class="panel-desc" id="pDesc">-</div>
-      <div class="panel-section-label">Puntos clave</div>
-      <ul class="panel-points" id="pPoints"></ul>
-      <div class="panel-relations-area" id="pRelArea">
-        <div class="panel-section-label" style="margin-bottom:9px">Relaciones</div>
-        <div id="pRelChips"></div>
+      <div id="ec-pc" class="panel-content">
+        <div class="panel-title" id="ec-title">-</div>
+        <div class="panel-desc"  id="ec-desc">-</div>
+        <div class="panel-section-label">Puntos clave</div>
+        <ul class="panel-points" id="ec-points"></ul>
+        <div class="panel-relations-area" id="ec-relarea">
+          <div class="panel-section-label" style="margin-bottom:8px">Relaciones</div>
+          <div id="ec-relchips"></div>
+        </div>
       </div>
+      <div class="panel-kbd"><span><span class="kbd-key">&#8592;</span><span class="kbd-key">&#8594;</span> navegar</span><span><span class="kbd-key">Esc</span> vista libre</span></div>
     </div>
-    <div class="panel-kbd">
-      <span><span class="kbd-key">←</span><span class="kbd-key">→</span> navegar</span>
-      <span><span class="kbd-key">Esc</span> vista libre</span>
-    </div>
+  </div>
+  <div class="controls" id="ctrl-ec">
+    <button class="ctrl-btn" id="ec-prev" onclick="ecE.prev()" disabled>&#8592;</button>
+    <div class="ctrl-info"><div class="ctrl-count" id="ec-count">01 / 11</div><div class="ctrl-name" id="ec-cname">-</div></div>
+    <div class="ctrl-bar"><div class="ctrl-bar-fill" id="ec-fill" style="width:9%"></div></div>
+    <button class="ctrl-btn" id="ec-next" onclick="ecE.next()">&#8594;</button>
+  </div>
+  <div class="top-btns">
+    <button class="top-btn on" id="ec-bpres" onclick="ecE.setMode('presentation')">Presentacion</button>
+    <button class="top-btn"   id="ec-bfree" onclick="ecE.setMode('free')">Vista libre</button>
+  </div>
+  <div class="legend" id="legend-ec">
+    <div class="legend-title">Leyenda</div>
+    <div class="legend-item"><svg width="36" height="14" viewBox="0 0 36 14"><defs><marker id="la1" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L10,4 L0,8 z" fill="#c49a38"/></marker></defs><line x1="2" y1="7" x2="28" y2="7" stroke="#c49a38" stroke-width="1.5" marker-end="url(#la1)"/></svg><span>Asociacion</span></div>
+    <div class="legend-item"><svg width="36" height="14" viewBox="0 0 36 14"><defs><marker id="li1" markerWidth="13" markerHeight="10" refX="12" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L12,5 L0,10 z" fill="none" stroke="#c49a38" stroke-width="1.5"/></marker></defs><line x1="2" y1="7" x2="28" y2="7" stroke="#c49a38" stroke-width="1.5" marker-end="url(#li1)"/></svg><span>Herencia</span></div>
+    <div class="legend-item"><svg width="36" height="14" viewBox="0 0 36 14"><defs><marker id="ld1" markerWidth="14" markerHeight="10" refX="1" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M1,5 L7,1 L13,5 L7,9 z" fill="#c49a38"/></marker><marker id="la1b" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L10,4 L0,8 z" fill="#c49a38"/></marker></defs><line x1="4" y1="7" x2="30" y2="7" stroke="#c49a38" stroke-width="1.5" marker-start="url(#ld1)" marker-end="url(#la1b)"/></svg><span>Composicion</span></div>
+    <div class="legend-item"><svg width="36" height="14" viewBox="0 0 36 14"><line x1="2" y1="7" x2="34" y2="7" stroke="#c49a38" stroke-width="1.5" stroke-dasharray="4 3"/></svg><span>Asociacion N:M</span></div>
   </div>
 </div>
 
-<!-- CONTROLS -->
-<div id="controls">
-  <button class="ctrl-btn" id="btnPrev" onclick="prevStep()" disabled>&#8592;</button>
-  <div class="ctrl-info">
-    <div class="ctrl-count" id="ctrlCount">01 / 11</div>
-    <div class="ctrl-name" id="ctrlName">-</div>
-  </div>
-  <div class="ctrl-bar"><div class="ctrl-bar-fill" id="ctrlFill" style="width:9%"></div></div>
-  <button class="ctrl-btn" id="btnNext" onclick="nextStep()">&#8594;</button>
-</div>
-
-<!-- LEGEND -->
-<div id="legend">
-  <div class="legend-title">Leyenda</div>
-  <div class="legend-item">
-    <svg width="38" height="14" viewBox="0 0 38 14">
-      <line x1="2" y1="7" x2="30" y2="7" stroke="#c49a38" stroke-width="1.5" marker-end="url(#leg-arrow)"/>
-      <defs>
-        <marker id="leg-arrow" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto" markerUnits="userSpaceOnUse">
-          <path d="M0,0 L10,4 L0,8 z" fill="#c49a38"/>
-        </marker>
-      </defs>
-    </svg>
-    <span>Asociacion / Navegacion</span>
-  </div>
-  <div class="legend-item">
-    <svg width="38" height="14" viewBox="0 0 38 14">
-      <defs>
-        <marker id="leg-inherit" markerWidth="13" markerHeight="10" refX="12" refY="5" orient="auto" markerUnits="userSpaceOnUse">
-          <path d="M0,0 L12,5 L0,10 z" fill="none" stroke="#c49a38" stroke-width="1.5"/>
-        </marker>
-      </defs>
-      <line x1="2" y1="7" x2="30" y2="7" stroke="#c49a38" stroke-width="1.5" marker-end="url(#leg-inherit)"/>
-    </svg>
-    <span>Herencia (extends)</span>
-  </div>
-  <div class="legend-item">
-    <svg width="38" height="14" viewBox="0 0 38 14">
-      <defs>
-        <marker id="leg-diamond" markerWidth="14" markerHeight="10" refX="1" refY="5" orient="auto" markerUnits="userSpaceOnUse">
-          <path d="M1,5 L7,1 L13,5 L7,9 z" fill="#c49a38"/>
-        </marker>
-        <marker id="leg-arr2" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto" markerUnits="userSpaceOnUse">
-          <path d="M0,0 L10,4 L0,8 z" fill="#c49a38"/>
-        </marker>
-      </defs>
-      <line x1="4" y1="7" x2="32" y2="7" stroke="#c49a38" stroke-width="1.5" marker-start="url(#leg-diamond)" marker-end="url(#leg-arr2)"/>
-    </svg>
-    <span>Composicion (ciclo de vida)</span>
-  </div>
-  <div class="legend-item">
-    <svg width="38" height="14" viewBox="0 0 38 14">
-      <line x1="2" y1="7" x2="36" y2="7" stroke="#c49a38" stroke-width="1.5" stroke-dasharray="4 3"/>
-    </svg>
-    <span>Asociacion N:M</span>
-  </div>
-  <div class="legend-item abstract-sample">
-    <div class="leg-box-abstract">
-      <span class="leg-stereo">&laquo;abstract&raquo;</span>
-      <span class="leg-classname">NombreClase</span>
+<!-- ══ DIAGRAMA 2: MAGIC FILM ══ -->
+<div id="wrap-mf" class="diagram-wrap">
+  <div class="viewport" id="vp-mf">
+    <div class="canvas" id="cv-mf">
+      <svg class="svg-layer" id="svg-mf">
+        <defs>
+          <marker id="mf-arr"  markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L10,4 L0,8 z" fill="#f5a623"/></marker>
+          <marker id="mf-dia"  markerWidth="14" markerHeight="10" refX="1" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M1,5 L7,1 L13,5 L7,9 z" fill="#f5a623"/></marker>
+          <marker id="mf-pur"  markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L10,4 L0,8 z" fill="#9b59b6"/></marker>
+        </defs>
+      </svg>
     </div>
-    <span>Clase abstracta</span>
   </div>
-</div>
-
-<!-- TOP BUTTONS -->
-<div id="top-btns">
-  <button class="top-btn on" id="btnPres" onclick="setMode('presentation')">Presentacion</button>
-  <button class="top-btn"   id="btnFree" onclick="setMode('free')">Vista general</button>
+  <div class="panel" id="panel-mf">
+    <div class="panel-topbar"></div>
+    <div class="panel-body">
+      <div class="panel-meta">
+        <div class="panel-num" id="mf-num">01</div>
+        <div><div class="panel-logo">Magic Film</div><div class="panel-concept" id="mf-concept">-</div><div class="panel-step-of" id="mf-stepof">Paso 1 de 12</div></div>
+      </div>
+      <div id="mf-pc" class="panel-content">
+        <div class="panel-title" id="mf-title">-</div>
+        <div class="panel-desc"  id="mf-desc">-</div>
+        <div class="panel-section-label">Puntos clave</div>
+        <ul class="panel-points" id="mf-points"></ul>
+        <div class="panel-relations-area" id="mf-relarea">
+          <div class="panel-section-label" style="margin-bottom:8px">Relaciones</div>
+          <div id="mf-relchips"></div>
+        </div>
+      </div>
+      <div class="panel-kbd"><span><span class="kbd-key">&#8592;</span><span class="kbd-key">&#8594;</span> navegar</span><span><span class="kbd-key">Esc</span> vista libre</span></div>
+    </div>
+  </div>
+  <div class="controls" id="ctrl-mf">
+    <button class="ctrl-btn" id="mf-prev" onclick="mfE.prev()" disabled>&#8592;</button>
+    <div class="ctrl-info"><div class="ctrl-count" id="mf-count">01 / 12</div><div class="ctrl-name" id="mf-cname">-</div></div>
+    <div class="ctrl-bar"><div class="ctrl-bar-fill" id="mf-fill" style="width:8%"></div></div>
+    <button class="ctrl-btn" id="mf-next" onclick="mfE.next()">&#8594;</button>
+  </div>
+  <div class="top-btns">
+    <button class="top-btn on" id="mf-bpres" onclick="mfE.setMode('presentation')">Presentacion</button>
+    <button class="top-btn"   id="mf-bfree" onclick="mfE.setMode('free')">Vista libre</button>
+  </div>
+  <div class="legend" id="legend-mf">
+    <div class="legend-title">Leyenda</div>
+    <div class="legend-item"><svg width="36" height="14" viewBox="0 0 36 14"><defs><marker id="la2" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L10,4 L0,8 z" fill="#f5a623"/></marker></defs><line x1="2" y1="7" x2="28" y2="7" stroke="#f5a623" stroke-width="1.5" marker-end="url(#la2)"/></svg><span>Asociacion</span></div>
+    <div class="legend-item"><svg width="36" height="14" viewBox="0 0 36 14"><defs><marker id="ld2" markerWidth="14" markerHeight="10" refX="1" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M1,5 L7,1 L13,5 L7,9 z" fill="#f5a623"/></marker><marker id="la2b" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L10,4 L0,8 z" fill="#f5a623"/></marker></defs><line x1="4" y1="7" x2="30" y2="7" stroke="#f5a623" stroke-width="1.5" marker-start="url(#ld2)" marker-end="url(#la2b)"/></svg><span>Composicion</span></div>
+    <div class="legend-item"><svg width="36" height="14" viewBox="0 0 36 14"><line x1="2" y1="7" x2="34" y2="7" stroke="#f5a623" stroke-width="1.5" stroke-dasharray="4 3"/></svg><span>Asociacion N:M</span></div>
+    <div class="legend-item"><svg width="36" height="14" viewBox="0 0 36 14"><defs><marker id="lp2" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L10,4 L0,8 z" fill="#9b59b6"/></marker></defs><line x1="2" y1="7" x2="28" y2="7" stroke="#9b59b6" stroke-width="1.5" marker-end="url(#lp2)"/></svg><span>Servicio externo</span></div>
+    <div class="legend-item"><div class="leg-box-service"><span class="leg-stereo">&laquo;service&raquo;</span><span class="leg-classname">Servicio</span></div><span>Clase de servicio</span></div>
+  </div>
 </div>
 
 <script>
-/* ══════════════════════════════════════════════
-   DATA
-══════════════════════════════════════════════ */
-
-const CLASSES = {
-  Cliente: {
-    x:520, y:30,
-    attrs:   ['-int id','-String nombre','-String apellido','-String email','-String telefono'],
-    methods: ['+actualizar() void','+login() boolean']
-  },
-  Direccion: {
-    x:900, y:30,
-    attrs:   ['-int id','-String calle','-String ciudad','-String codigoPostal','-String pais'],
-    methods: []
-  },
-  Carrito_compra: {
-    x:80, y:225,
-    attrs:   ['-int id','-Date fechaCreacion','-String estado'],
-    methods: ['+agregar() void','+calcularTotal() double','+convertirEnPedido() void']
-  },
-  DetalleProducto: {
-    x:490, y:400,
-    isAbstract: true,
-    attrs:   ['-int cantidad','-double precioUnitario'],
-    methods: ['+calcularSubtotal() double']
-  },
-  ItemCarrito: {
-    x:245, y:580,
-    attrs:   ['-int id'],
-    methods: []
-  },
-  Producto: {
-    x:490, y:720,
-    attrs:   ['-int id','-String denominacion','-double precioUnitario','-int stock'],
-    methods: ['+verificarStock() boolean','+actualizarStock() void']
-  },
-  Proveedor: {
-    x:860, y:720,
-    attrs:   ['-int id','-String nombre','-String contacto','-String telefono'],
-    methods: []
-  },
-  Pedido: {
-    x:900, y:225,
-    attrs:   ['-int id','-Date fechaRealizacion','-String estado','-double total'],
-    methods: ['+confirmar() void','+cancelar() void','+calcularTotal() double']
-  },
-  LineaPedido: {
-    x:740, y:580,
-    attrs:   ['-int id','-double subtotal'],
-    methods: []
-  },
-  Envio: {
-    x:1155, y:225,
-    attrs:   ['-int id','-Date fechaEnvio','-String compania','-String numeroSeguimiento'],
-    methods: ['+actualizarEstado() void']
-  },
-  Pago: {
-    x:1155, y:440,
-    attrs:   ['-int id','-double monto','-String metodoPago','-String estado'],
-    methods: ['+procesar() boolean','+reembolsar() boolean']
+/* ══ SWITCHER ══ */
+let current = 'ec';
+let mfInited = false;
+function switchTo(id) {
+  document.querySelectorAll('.diagram-wrap').forEach(w => w.classList.remove('active'));
+  document.getElementById('wrap-' + id).classList.add('active');
+  if (id === 'mf' && !mfInited) {
+    mfInited = true;
+    setTimeout(() => { mfE.remeasure(); }, 60);
   }
-};
-
-// type: 'arrow' | 'composition' | 'inheritance' | 'assoc'
-// for inheritance: from=parent, to=child  (line drawn child→parent, triangle at parent)
-// for composition: from=whole/owner,  to=part  (diamond at from, arrow at to)
-const CONNECTIONS = [
-  { id:'c1',  from:'Cliente',        to:'Direccion',      type:'arrow',       fromMul:'1', toMul:'0..*', label:'tiene',      revealAt:1 },
-  { id:'c2',  from:'Cliente',        to:'Carrito_compra', type:'arrow',       fromMul:'1', toMul:'0..*', label:'crea',       revealAt:2 },
-  { id:'c3',  from:'Cliente',        to:'Pedido',         type:'arrow',       fromMul:'1', toMul:'0..*', label:'realiza',    revealAt:7 },
-  { id:'c4',  from:'Carrito_compra', to:'ItemCarrito',    type:'composition', fromMul:'1', toMul:'1..*', label:'contiene',   revealAt:4 },
-  { id:'c5',  from:'DetalleProducto',to:'ItemCarrito',    type:'inheritance',                                                revealAt:4 },
-  { id:'c6',  from:'DetalleProducto',to:'LineaPedido',    type:'inheritance',                                                revealAt:8 },
-  { id:'c7',  from:'ItemCarrito',    to:'Producto',       type:'arrow',       fromMul:'0..*',toMul:'1',  label:'referencia', revealAt:5 },
-  { id:'c8',  from:'LineaPedido',    to:'Producto',       type:'arrow',       fromMul:'0..*',toMul:'1',  label:'referencia', revealAt:8 },
-  { id:'c9',  from:'Pedido',         to:'LineaPedido',    type:'composition', fromMul:'1', toMul:'1..*', label:'incluye',    revealAt:8 },
-  { id:'c10', from:'Pedido',         to:'Envio',          type:'composition', fromMul:'1', toMul:'0..1', label:'genera',     revealAt:9 },
-  { id:'c11', from:'Pedido',         to:'Pago',           type:'arrow',       fromMul:'1', toMul:'1..*', label:'procesa',    revealAt:10 },
-  { id:'c12', from:'Envio',          to:'Direccion',      type:'arrow',                                   label:'entrega',    revealAt:9 },
-  { id:'c13', from:'Producto',       to:'Proveedor',      type:'assoc',       fromMul:'0..*',toMul:'0..*',label:'suministra', revealAt:6 }
-];
-
-const STEPS = [
-  {
-    id:'Cliente', title:'Cliente', concept:'Entidad Principal',
-    desc:'Todo sistema comienza con el usuario. El Cliente es el actor central que interactua con todas las funcionalidades, desde el registro hasta la compra final.',
-    points:['Almacena credenciales de autenticacion','Gestiona multiples direcciones de envio','Mantiene historial de carritos y pedidos','Puede actualizar su perfil en cualquier momento'],
-    rels:['1:N Direccion','1:N Carrito_compra','1:N Pedido']
-  },
-  {
-    id:'Direccion', title:'Direccion', concept:'Entidad de Soporte',
-    desc:'Un cliente puede tener multiples direcciones. Esta separacion permite gestionar envios flexibles sin duplicar datos en cada pedido.',
-    points:['Desacoplada del Cliente para reutilizacion','Utilizada tanto para facturacion como envio','Estructura completa: calle, ciudad, CP, pais','Un cliente puede no tener direcciones registradas aun'],
-    rels:['N:1 Cliente','1:0..1 Envio']
-  },
-  {
-    id:'Carrito_compra', title:'Carrito de Compra', concept:'Estado Temporal',
-    desc:'Representa la intencion de compra antes de confirmar. Es un estado transitorio que puede convertirse en pedido o ser abandonado.',
-    points:['Mantiene fecha de creacion para detectar abandono','Estados posibles: activo, convertido, abandonado','Calcula totales en tiempo real','Se convierte en Pedido via convertirEnPedido()'],
-    rels:['N:1 Cliente','1:N ItemCarrito']
-  },
-  {
-    id:'DetalleProducto', title:'DetalleProducto', concept:'Clase Abstracta',
-    desc:'Define el contrato comun para cualquier elemento que referencie un producto con cantidad. Aplica el patron Template Method para el calculo de subtotales.',
-    points:['No puede instanciarse directamente','Define atributos compartidos: cantidad, precioUnitario','calcularSubtotal() es heredado por todas las subclases','Garantiza consistencia en todos los calculos de totales'],
-    rels:['Herencia: ItemCarrito','Herencia: LineaPedido']
-  },
-  {
-    id:'ItemCarrito', title:'Item Carrito', concept:'Implementacion Temporal',
-    desc:'Instancia concreta de DetalleProducto especifica para el carrito de compra. Hereda el calculo de subtotales y agrega su propio identificador.',
-    points:['Extiende DetalleProducto por herencia','Referencia a Producto con relacion N:1','Pertenece a un Carrito mediante composicion','Si el carrito se elimina, sus items desaparecen con el'],
-    rels:['extends DetalleProducto','N:1 Producto','N:1 Carrito_compra']
-  },
-  {
-    id:'Producto', title:'Producto', concept:'Entidad Central',
-    desc:'El catalogo de bienes disponibles. Es referenciado por multiples partes del sistema pero mantiene su independencia de cualquier proceso.',
-    points:['Gestiona inventario (stock) y precios unitarios','Verifica disponibilidad antes de permitir la venta','Referenciado por ItemCarrito y LineaPedido','Relacion N:M con Proveedores (multiples fuentes)'],
-    rels:['1:N ItemCarrito','1:N LineaPedido','N:M Proveedor']
-  },
-  {
-    id:'Proveedor', title:'Proveedor', concept:'Entidad Externa',
-    desc:'Representa las entidades que suministran productos. La relacion N:M permite que un producto tenga multiples fuentes de abastecimiento.',
-    points:['Independiente del ciclo de venta al cliente','Relacion N:M con Productos','Permite estrategias de abastecimiento alternativo','Datos de contacto para gestion de inventario'],
-    rels:['N:M Producto']
-  },
-  {
-    id:'Pedido', title:'Pedido', concept:'Entidad de Negocio',
-    desc:'Representa una compra confirmada. Es el nucleo del proceso de venta, gestionando el ciclo completo desde la confirmacion hasta la entrega.',
-    points:['Estados: pendiente, pagado, enviado, entregado, cancelado','Contiene lineas de pedido mediante composicion','Puede generar un Envio (relacion 0..1, es opcional)','Registra multiples pagos (parciales o cuotas)'],
-    rels:['N:1 Cliente','1:N LineaPedido','1:0..1 Envio','1:N Pago']
-  },
-  {
-    id:'LineaPedido', title:'Linea de Pedido', concept:'Persistencia Definitiva',
-    desc:'Version persistente del detalle una vez confirmado el pedido. Almacena el subtotal calculado para conservar el historico aunque el precio del producto cambie.',
-    points:['Extiende DetalleProducto por herencia','Guarda subtotal como dato historico inmutable','Referencia a Producto con relacion N:1','Pertenece al Pedido mediante composicion'],
-    rels:['extends DetalleProducto','N:1 Producto','N:1 Pedido']
-  },
-  {
-    id:'Envio', title:'Envio', concept:'Logistica',
-    desc:'Gestiona la entrega fisica de los pedidos. Es opcional porque algunos pedidos pueden ser retiro en tienda o corresponder a servicios digitales.',
-    points:['Relacion 0..1 con Pedido (completamente opcional)','Referencia la Direccion de entrega del cliente','Numero de seguimiento para trazabilidad externa','Registra la compania transportista utilizada'],
-    rels:['0..1:1 Pedido','N:1 Direccion']
-  },
-  {
-    id:'Pago', title:'Pago', concept:'Transaccion Financiera',
-    desc:'Registro de transacciones monetarias asociadas al pedido. Un pedido puede tener multiples pagos para soportar pagos parciales, en cuotas o reembolsos.',
-    points:['Multiples pagos por pedido (relacion 1:N)','Estados: pendiente, completado, fallido, reembolsado','Metodos procesar() y reembolsar() encapsulan la logica','Monto independiente del total (pagos parciales)'],
-    rels:['N:1 Pedido']
-  }
-];
-
-/* ══════════════════════════════════════════════
-   STATE
-══════════════════════════════════════════════ */
-let currentStep = 0;
-let mode = 'presentation';
-let scale = 0.78, tx = 90, ty = 55;
-let boxData = {};  // {name: {x,y,w,h}}
-let smoothTransition = false;
-
-/* ══════════════════════════════════════════════
-   RENDER CLASS BOXES
-══════════════════════════════════════════════ */
-function renderClasses() {
-  const canvas = document.getElementById('canvas');
-  for (const [name, d] of Object.entries(CLASSES)) {
-    const box = document.createElement('div');
-    box.className = 'class-box' + (d.isAbstract ? ' abstract' : '');
-    box.id = 'box-' + name;
-    box.style.left = d.x + 'px';
-    box.style.top  = d.y + 'px';
-
-    let html = '<div class="class-header">';
-    if (d.isAbstract) html += '<span class="class-stereotype">&laquo;abstract&raquo;</span>';
-    html += `<div class="class-name">${name.replace('_',' ')}</div></div>`;
-
-    if (d.attrs.length) {
-      html += '<div class="class-section">';
-      d.attrs.forEach(a => { html += `<div class="class-member">${a}</div>`; });
-      html += '</div>';
-    }
-    if (d.methods.length) {
-      html += '<div class="class-section">';
-      d.methods.forEach(m => { html += `<div class="class-member is-method">${m}</div>`; });
-      html += '</div>';
-    }
-
-    box.innerHTML = html;
-    canvas.appendChild(box);
-  }
+  document.getElementById('tab-ec').style.cssText = id==='ec'
+    ? 'padding:6px 18px;border-radius:5px;border:1px solid rgba(196,154,56,0.4);font-size:12px;font-weight:600;cursor:pointer;font-family:Syne,sans-serif;background:rgba(196,154,56,0.10);color:#c49a38;'
+    : 'padding:6px 18px;border-radius:5px;border:none;font-size:12px;font-weight:600;cursor:pointer;font-family:Syne,sans-serif;background:transparent;color:#44445a;';
+  document.getElementById('tab-mf').style.cssText = id==='mf'
+    ? 'padding:6px 18px;border-radius:5px;border:1px solid rgba(245,166,35,0.3);font-size:12px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;background:rgba(245,166,35,0.09);color:#f5a623;'
+    : 'padding:6px 18px;border-radius:5px;border:none;font-size:12px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;background:transparent;color:#555;';
+  // Adaptar switcher bar al tema
+  const bar = document.querySelector('#wrap-ec').previousElementSibling || document.getElementById('sw-ec');
+  current = id;
 }
 
-/* ══════════════════════════════════════════════
-   MEASURE BOXES (after layout)
-══════════════════════════════════════════════ */
-function measureBoxes() {
-  for (const name of Object.keys(CLASSES)) {
-    const el = document.getElementById('box-' + name);
-    if (!el) continue;
-    boxData[name] = {
-      x: CLASSES[name].x,
-      y: CLASSES[name].y,
-      w: el.offsetWidth,
-      h: el.offsetHeight
-    };
-  }
-}
-
-/* ══════════════════════════════════════════════
-   EDGE POINT (box boundary toward target)
-══════════════════════════════════════════════ */
-function edge(srcName, tgtName) {
-  const s = boxData[srcName], t = boxData[tgtName];
-  if (!s || !t) return {x:0,y:0};
-  const scx = s.x + s.w/2, scy = s.y + s.h/2;
-  const tcx = t.x + t.w/2, tcy = t.y + t.h/2;
-  const dx = tcx - scx, dy = tcy - scy;
-  if (!dx && !dy) return {x:scx,y:scy};
-  const hw = s.w/2, hh = s.h/2;
-  if (Math.abs(dx)/hw >= Math.abs(dy)/hh) {
-    const sx = dx>0 ? scx+hw : scx-hw;
-    return {x:sx, y:scy + dy*(hw/Math.abs(dx))};
-  } else {
-    const sy = dy>0 ? scy+hh : scy-hh;
-    return {x:scx + dx*(hh/Math.abs(dy)), y:sy};
-  }
-}
-
-/* ══════════════════════════════════════════════
-   DRAW CONNECTIONS
-══════════════════════════════════════════════ */
+/* ══ MOTOR COMPARTIDO ══ */
 function svgEl(tag, attrs={}) {
   const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
-  for (const [k,v] of Object.entries(attrs)) el.setAttribute(k, v);
+  for (const [k,v] of Object.entries(attrs)) el.setAttribute(k,v);
   return el;
 }
 
-function drawConnections() {
-  const svg = document.getElementById('svg-layer');
-  svg.querySelectorAll('.conn').forEach(e => e.remove());
+function makeEngine(cfg) {
+  const {p, canvasId, svgId, vpId, classes, conns, steps, panelId, numId, conceptId, stepofId, pcId, titleId, descId, pointsId, relareaId, relchipsId, countId, cnameId, fillId, prevId, nextId, bpresId, bfreeId, initSc, initTx, initTy, arrMark, diaMark, purMark} = cfg;
+  let step=0, mode='presentation', scale=initSc, tx=initTx, ty=initTy;
+  let boxData={}, panning=false, px0=0,py0=0,tx0=0,ty0=0;
 
-  for (const c of CONNECTIONS) {
-    const g = svgEl('g');
-    g.classList.add('conn');
-    g.id = 'conn-' + c.id;
-    g.style.opacity = '0';
-    g.style.transition = 'opacity 0.5s ease';
-
-    let p1, p2;
-    if (c.type === 'inheritance') {
-      // draw from child to parent; triangle at parent (markerEnd)
-      p1 = edge(c.to,   c.from);  // child's edge toward parent
-      p2 = edge(c.from, c.to);    // parent's edge toward child
-    } else {
-      p1 = edge(c.from, c.to);
-      p2 = edge(c.to,   c.from);
-    }
-
-    const line = svgEl('line', {
-      x1:p1.x, y1:p1.y, x2:p2.x, y2:p2.y,
-      stroke:'#c49a38', 'stroke-width':'1.5'
-    });
-
-    if (c.type === 'inheritance') {
-      line.setAttribute('marker-end', 'url(#m-inherit)');
-    } else if (c.type === 'composition') {
-      line.setAttribute('marker-start', 'url(#m-diamond)');
-      line.setAttribute('marker-end',   'url(#m-arrow)');
-    } else if (c.type === 'arrow') {
-      line.setAttribute('marker-end', 'url(#m-arrow)');
-    }
-    // assoc: no markers
-    if (c.type === 'assoc') {
-      line.setAttribute('stroke-dasharray', '4 3');
-    }
-
-    g.appendChild(line);
-
-    // Mid-label
-    const mx = (p1.x+p2.x)/2, my = (p1.y+p2.y)/2;
-    if (c.label) {
-      // Slight perpendicular offset
-      const dx = p2.x-p1.x, dy = p2.y-p1.y;
-      const len = Math.sqrt(dx*dx+dy*dy)||1;
-      const ox = -dy/len*8, oy = dx/len*8;
-      const lbl = svgEl('text', {
-        x: mx+ox, y: my+oy,
-        'text-anchor':'middle',
-        fill:'#555570',
-        'font-family':'IBM Plex Mono, monospace',
-        'font-size':'9',
-        'font-style':'italic'
-      });
-      lbl.textContent = c.label;
-      g.appendChild(lbl);
-    }
-
-    // Multiplicity at source (10% along line)
-    if (c.fromMul) {
-      const t1 = svgEl('text', {
-        x: p1.x+(p2.x-p1.x)*0.12, y: p1.y+(p2.y-p1.y)*0.12-5,
-        'text-anchor':'middle', fill:'#555570',
-        'font-family':'IBM Plex Mono, monospace', 'font-size':'8'
-      });
-      t1.textContent = c.fromMul;
-      g.appendChild(t1);
-    }
-    // Multiplicity at target (88% along line)
-    if (c.toMul) {
-      const t2 = svgEl('text', {
-        x: p1.x+(p2.x-p1.x)*0.88, y: p1.y+(p2.y-p1.y)*0.88-5,
-        'text-anchor':'middle', fill:'#555570',
-        'font-family':'IBM Plex Mono, monospace', 'font-size':'8'
-      });
-      t2.textContent = c.toMul;
-      g.appendChild(t2);
-    }
-
-    svg.appendChild(g);
+  function applyT(anim=false) {
+    const c=document.getElementById(canvasId);
+    c.style.transition=anim?'transform 0.7s cubic-bezier(0.16,1,0.3,1)':'none';
+    c.style.transform=`translate(${tx}px,${ty}px) scale(${scale})`;
   }
-}
-
-/* ══════════════════════════════════════════════
-   UPDATE TRANSFORM
-══════════════════════════════════════════════ */
-function applyTransform(animate=false) {
-  const canvas = document.getElementById('canvas');
-  canvas.style.transition = animate ? 'transform 0.7s cubic-bezier(0.16,1,0.3,1)' : 'none';
-  canvas.style.transform  = `translate(${tx}px,${ty}px) scale(${scale})`;
-}
-
-/* ══════════════════════════════════════════════
-   CENTER ON CLASS
-══════════════════════════════════════════════ */
-function centerOnClass(name, animate=true) {
-  const b = boxData[name];
-  if (!b) return;
-  const vw = window.innerWidth, vh = window.innerHeight;
-  const panelW = 22 + 350 + 20; // left + panel + gap
-  const cx = b.x + b.w/2, cy = b.y + b.h/2;
-  const targetScale = 1.05;
-  const visLeft = panelW;
-  const screenCx = visLeft + (vw - visLeft) / 2;
-  const screenCy = vh / 2;
-  tx = screenCx - cx * targetScale;
-  ty = screenCy - cy * targetScale;
-  scale = targetScale;
-  applyTransform(animate);
-}
-
-/* ══════════════════════════════════════════════
-   UPDATE PANEL & CONTROLS
-══════════════════════════════════════════════ */
-function updateUI() {
-  const s = STEPS[currentStep];
-
-  document.getElementById('pNum').textContent = String(currentStep+1).padStart(2,'0');
-  document.getElementById('pConcept').textContent = s.concept;
-  document.getElementById('pStepOf').textContent = `Paso ${currentStep+1} de ${STEPS.length}`;
-
-  // Animate content
-  const pc = document.getElementById('panel-content');
-  pc.classList.remove('panel-anim');
-  void pc.offsetWidth;
-  pc.classList.add('panel-anim');
-
-  document.getElementById('pTitle').textContent = s.title;
-  document.getElementById('pDesc').textContent = s.desc;
-  document.getElementById('pPoints').innerHTML = s.points.map(p=>`<li>${p}</li>`).join('');
-
-  const ra = document.getElementById('pRelArea');
-  if (s.rels && s.rels.length) {
-    document.getElementById('pRelChips').innerHTML = s.rels.map(r=>`<span class="rel-chip">${r}</span>`).join('');
-    ra.style.display = 'block';
-  } else {
-    ra.style.display = 'none';
+  function render() {
+    const canvas=document.getElementById(canvasId);
+    for (const [name,d] of Object.entries(classes)) {
+      const box=document.createElement('div');
+      let cls='class-box'+(d.isAbstract?' abstract':'')+(d.isService?' service':'');
+      box.className=cls; box.id=p+'-box-'+name;
+      box.style.left=d.x+'px'; box.style.top=d.y+'px';
+      let html='<div class="class-header">';
+      if(d.isAbstract) html+='<span class="class-stereotype">&laquo;abstract&raquo;</span>';
+      if(d.isService)  html+='<span class="class-stereotype">&laquo;service&raquo;</span>';
+      html+=`<div class="class-name">${name.replace(/_/g,' ')}</div></div>`;
+      if(d.attrs&&d.attrs.length){html+='<div class="class-section">';d.attrs.forEach(a=>{html+=`<div class="class-member">${a}</div>`;});html+='</div>';}
+      if(d.methods&&d.methods.length){html+='<div class="class-section">';d.methods.forEach(m=>{html+=`<div class="class-member is-method">${m}</div>`;});html+='</div>';}
+      box.innerHTML=html; canvas.appendChild(box);
+    }
   }
-
-  // Controls
-  document.getElementById('ctrlCount').textContent =
-    `${String(currentStep+1).padStart(2,'0')} / ${String(STEPS.length).padStart(2,'0')}`;
-  document.getElementById('ctrlName').textContent = s.title;
-  document.getElementById('ctrlFill').style.width = ((currentStep+1)/STEPS.length*100) + '%';
-  document.getElementById('btnPrev').disabled = currentStep === 0;
-  document.getElementById('btnNext').disabled = currentStep === STEPS.length-1;
-}
-
-/* ══════════════════════════════════════════════
-   UPDATE DIAGRAM
-══════════════════════════════════════════════ */
-function updateDiagram() {
-  if (mode === 'free') {
-    Object.keys(CLASSES).forEach(n => {
-      const b = document.getElementById('box-'+n);
-      b.className = 'class-box' + (CLASSES[n].isAbstract?' abstract':'') + ' visible';
-    });
-    CONNECTIONS.forEach(c => {
-      const g = document.getElementById('conn-'+c.id);
-      if (g) g.style.opacity = '1';
-    });
-    return;
+  function measure() {
+    for (const name of Object.keys(classes)) {
+      const el=document.getElementById(p+'-box-'+name);
+      if(!el) continue;
+      boxData[name]={x:classes[name].x,y:classes[name].y,w:el.offsetWidth,h:el.offsetHeight};
+    }
   }
-
-  // Presentation mode
-  const revealed = new Set(STEPS.slice(0, currentStep+1).map(s=>s.id));
-  const active   = STEPS[currentStep].id;
-
-  Object.keys(CLASSES).forEach(n => {
-    const b = document.getElementById('box-'+n);
-    const base = 'class-box' + (CLASSES[n].isAbstract?' abstract':'');
-    if (n === active)        b.className = base + ' visible active';
-    else if (revealed.has(n)) b.className = base + ' visible revealed';
-    else                     b.className = base;
+  function edge(src,tgt) {
+    const s=boxData[src],t=boxData[tgt];
+    if(!s||!t) return{x:0,y:0};
+    const scx=s.x+s.w/2,scy=s.y+s.h/2,tcx=t.x+t.w/2,tcy=t.y+t.h/2;
+    const dx=tcx-scx,dy=tcy-scy;
+    if(!dx&&!dy) return{x:scx,y:scy};
+    const hw=s.w/2,hh=s.h/2;
+    if(Math.abs(dx)/hw>=Math.abs(dy)/hh){const sx=dx>0?scx+hw:scx-hw;return{x:sx,y:scy+dy*(hw/Math.abs(dx))};}
+    else{const sy=dy>0?scy+hh:scy-hh;return{x:scx+dx*(hh/Math.abs(dy)),y:sy};}
+  }
+  function drawConns() {
+    const svg=document.getElementById(svgId);
+    svg.querySelectorAll('.conn').forEach(e=>e.remove());
+    for (const c of conns) {
+      const g=svgEl('g'); g.classList.add('conn'); g.id=p+'-conn-'+c.id;
+      g.style.opacity='0'; g.style.transition='opacity 0.5s ease';
+      const col=c.purple?'#9b59b6':'';
+      const ma=c.purple?`url(#${purMark})`:`url(#${arrMark})`;
+      let p1,p2;
+      if(c.type==='inheritance'){p1=edge(c.to,c.from);p2=edge(c.from,c.to);}
+      else{p1=edge(c.from,c.to);p2=edge(c.to,c.from);}
+      const strokeC=col||(arrMark==='mf-arr'?'#f5a623':'#c49a38');
+      const line=svgEl('line',{x1:p1.x,y1:p1.y,x2:p2.x,y2:p2.y,stroke:strokeC,'stroke-width':'1.5'});
+      if(c.type==='inheritance')   line.setAttribute('marker-end',`url(#${cfg.inhMark||arrMark})`);
+      else if(c.type==='composition'){line.setAttribute('marker-start',`url(#${diaMark})`);line.setAttribute('marker-end',ma);}
+      else if(c.type==='arrow')    line.setAttribute('marker-end',ma);
+      if(c.type==='assoc')         line.setAttribute('stroke-dasharray','4 3');
+      g.appendChild(line);
+      const mx=(p1.x+p2.x)/2,my=(p1.y+p2.y)/2;
+      if(c.label){const ddx=p2.x-p1.x,ddy=p2.y-p1.y,len=Math.sqrt(ddx*ddx+ddy*ddy)||1,ox=-ddy/len*9,oy=ddx/len*9;const lbl=svgEl('text',{x:mx+ox,y:my+oy,'text-anchor':'middle',fill:'#555','font-family':'IBM Plex Mono,monospace','font-size':'9','font-style':'italic'});lbl.textContent=c.label;g.appendChild(lbl);}
+      if(c.fromMul){const t1=svgEl('text',{x:p1.x+(p2.x-p1.x)*0.12,y:p1.y+(p2.y-p1.y)*0.12-5,'text-anchor':'middle',fill:'#555','font-family':'IBM Plex Mono,monospace','font-size':'8'});t1.textContent=c.fromMul;g.appendChild(t1);}
+      if(c.toMul){const t2=svgEl('text',{x:p1.x+(p2.x-p1.x)*0.88,y:p1.y+(p2.y-p1.y)*0.88-5,'text-anchor':'middle',fill:'#555','font-family':'IBM Plex Mono,monospace','font-size':'8'});t2.textContent=c.toMul;g.appendChild(t2);}
+      svg.appendChild(g);
+    }
+  }
+  function centerOn(name,anim=true){
+    const b=boxData[name];if(!b)return;
+    const vw=window.innerWidth,vh=window.innerHeight-50;
+    const pw=16+345+16,cx=b.x+b.w/2,cy=b.y+b.h/2,ts=1.05;
+    tx=pw+(vw-pw)/2-cx*ts; ty=vh/2-cy*ts; scale=ts; applyT(anim);
+  }
+  function updateUI(){
+    const s=steps[step];
+    document.getElementById(numId).textContent=String(step+1).padStart(2,'0');
+    document.getElementById(conceptId).textContent=s.concept;
+    document.getElementById(stepofId).textContent=`Paso ${step+1} de ${steps.length}`;
+    const pc=document.getElementById(pcId);pc.classList.remove('panel-anim');void pc.offsetWidth;pc.classList.add('panel-anim');
+    document.getElementById(titleId).textContent=s.title;
+    document.getElementById(descId).textContent=s.desc;
+    document.getElementById(pointsId).innerHTML=s.points.map(pt=>`<li>${pt}</li>`).join('');
+    const ra=document.getElementById(relareaId);
+    if(s.rels&&s.rels.length){document.getElementById(relchipsId).innerHTML=s.rels.map(r=>`<span class="rel-chip">${r}</span>`).join('');ra.style.display='block';}
+    else ra.style.display='none';
+    document.getElementById(countId).textContent=`${String(step+1).padStart(2,'0')} / ${String(steps.length).padStart(2,'0')}`;
+    document.getElementById(cnameId).textContent=s.title;
+    document.getElementById(fillId).style.width=((step+1)/steps.length*100)+'%';
+    document.getElementById(prevId).disabled=step===0;
+    document.getElementById(nextId).disabled=step===steps.length-1;
+  }
+  function updateDiagram(){
+    if(mode==='free'){
+      Object.keys(classes).forEach(n=>{const b=document.getElementById(p+'-box-'+n);b.className='class-box'+(classes[n].isAbstract?' abstract':'')+(classes[n].isService?' service':'')+' visible';});
+      conns.forEach(c=>{const g=document.getElementById(p+'-conn-'+c.id);if(g)g.style.opacity='1';});
+      return;
+    }
+    const revealed=new Set(steps.slice(0,step+1).map(s=>s.id));
+    const active=steps[step].id;
+    Object.keys(classes).forEach(n=>{
+      const b=document.getElementById(p+'-box-'+n);
+      const base='class-box'+(classes[n].isAbstract?' abstract':'')+(classes[n].isService?' service':'');
+      if(n===active) b.className=base+' visible active';
+      else if(revealed.has(n)) b.className=base+' visible revealed';
+      else b.className=base;
+    });
+    conns.forEach(c=>{
+      const g=document.getElementById(p+'-conn-'+c.id);if(!g)return;
+      if(c.revealAt<=step) g.style.opacity=c.revealAt===step?'1':'0.18';
+      else g.style.opacity='0';
+    });
+  }
+  function goTo(s,anim=true){
+    step=Math.max(0,Math.min(steps.length-1,s));
+    updateUI();updateDiagram();
+    if(mode==='presentation') centerOn(steps[step].id,anim);
+  }
+  function setMode(m){
+    mode=m;const pres=m==='presentation';
+    document.getElementById(bpresId).classList.toggle('on',pres);
+    document.getElementById(bfreeId).classList.toggle('on',!pres);
+    document.getElementById(panelId).classList.toggle('hidden',!pres);
+    document.getElementById(vpId).classList.toggle('pannable',!pres);
+    if(!pres){updateDiagram();scale=0.64;tx=55;ty=25;applyT(true);}
+    else{updateDiagram();centerOn(steps[step].id,true);}
+  }
+  const vp=document.getElementById(vpId);
+  vp.addEventListener('mousedown',e=>{if(mode!=='free')return;panning=true;px0=e.clientX;py0=e.clientY;tx0=tx;ty0=ty;vp.classList.add('panning');});
+  document.addEventListener('mousemove',e=>{if(!panning)return;tx=tx0+(e.clientX-px0);ty=ty0+(e.clientY-py0);applyT(false);});
+  document.addEventListener('mouseup',()=>{panning=false;vp.classList.remove('panning');});
+  vp.addEventListener('wheel',e=>{if(mode!=='free')return;e.preventDefault();const f=e.deltaY>0?0.9:1.1;const ns=Math.min(Math.max(scale*f,0.2),3);const r=vp.getBoundingClientRect();const mx=e.clientX-r.left,my=e.clientY-r.top;tx=mx-(mx-tx)*(ns/scale);ty=my-(my-ty)*(ns/scale);scale=ns;applyT(false);},{passive:false});
+  document.addEventListener('keydown',e=>{
+    if(current!==p) return;
+    if(mode!=='presentation') return;
+    if(e.key==='ArrowRight'||e.key===' '){e.preventDefault();goTo(step+1);}
+    else if(e.key==='ArrowLeft'){e.preventDefault();goTo(step-1);}
+    else if(e.key==='Escape') setMode('free');
   });
-
-  CONNECTIONS.forEach(c => {
-    const g = document.getElementById('conn-'+c.id);
-    if (!g) return;
-    if (c.revealAt <= currentStep) {
-      g.style.opacity = c.revealAt === currentStep ? '1' : '0.2';
-    } else {
-      g.style.opacity = '0';
-    }
-  });
+  return {
+    init(){render();applyT(false);setTimeout(()=>{measure();drawConns();goTo(0,false);},80);},
+    remeasure(){measure();drawConns();goTo(0,false);},
+    next:()=>goTo(step+1), prev:()=>goTo(step-1), setMode
+  };
 }
 
-/* ══════════════════════════════════════════════
-   NAVIGATION
-══════════════════════════════════════════════ */
-function goToStep(s, animate=true) {
-  currentStep = Math.max(0, Math.min(STEPS.length-1, s));
-  updateUI();
-  updateDiagram();
-  if (mode === 'presentation') centerOnClass(STEPS[currentStep].id, animate);
-}
+/* ══ DATOS E-COMMERCE ══ */
+const EC_CL={
+  Cliente:       {x:520,y:35, attrs:['-int id','-String nombre','-String apellido','-String email','-String telefono'], methods:['+actualizar() void','+login() boolean']},
+  Direccion:     {x:920,y:35, attrs:['-int id','-String calle','-String ciudad','-String codigoPostal','-String pais'], methods:[]},
+  Carrito_compra:{x:70,y:230, attrs:['-int id','-Date fechaCreacion','-String estado'], methods:['+agregar() void','+calcularTotal() double','+convertirEnPedido() void']},
+  DetalleProducto:{x:490,y:410,isAbstract:true, attrs:['-int cantidad','-double precioUnitario'], methods:['+calcularSubtotal() double']},
+  ItemCarrito:   {x:230,y:600, attrs:['-int id'], methods:[]},
+  Producto:      {x:490,y:740, attrs:['-int id','-String denominacion','-double precioUnitario','-int stock'], methods:['+verificarStock() boolean','+actualizarStock() void']},
+  Proveedor:     {x:870,y:740, attrs:['-int id','-String nombre','-String contacto','-String telefono'], methods:[]},
+  Pedido:        {x:920,y:230, attrs:['-int id','-Date fechaRealizacion','-String estado','-double total'], methods:['+confirmar() void','+cancelar() void','+calcularTotal() double']},
+  LineaPedido:   {x:750,y:600, attrs:['-int id','-double subtotal'], methods:[]},
+  Envio:         {x:1170,y:230, attrs:['-int id','-Date fechaEnvio','-String compania','-String numeroSeguimiento'], methods:['+actualizarEstado() void']},
+  Pago:          {x:1170,y:450, attrs:['-int id','-double monto','-String metodoPago','-String estado'], methods:['+procesar() boolean','+reembolsar() boolean']}
+};
+const EC_CO=[
+  {id:'c1',from:'Cliente',to:'Direccion',type:'arrow',fromMul:'1',toMul:'0..*',label:'tiene',revealAt:1},
+  {id:'c2',from:'Cliente',to:'Carrito_compra',type:'arrow',fromMul:'1',toMul:'0..*',label:'crea',revealAt:2},
+  {id:'c3',from:'Cliente',to:'Pedido',type:'arrow',fromMul:'1',toMul:'0..*',label:'realiza',revealAt:7},
+  {id:'c4',from:'Carrito_compra',to:'ItemCarrito',type:'composition',fromMul:'1',toMul:'1..*',label:'contiene',revealAt:4},
+  {id:'c5',from:'DetalleProducto',to:'ItemCarrito',type:'inheritance',revealAt:4},
+  {id:'c6',from:'DetalleProducto',to:'LineaPedido',type:'inheritance',revealAt:8},
+  {id:'c7',from:'ItemCarrito',to:'Producto',type:'arrow',fromMul:'0..*',toMul:'1',label:'referencia',revealAt:5},
+  {id:'c8',from:'LineaPedido',to:'Producto',type:'arrow',fromMul:'0..*',toMul:'1',label:'referencia',revealAt:8},
+  {id:'c9',from:'Pedido',to:'LineaPedido',type:'composition',fromMul:'1',toMul:'1..*',label:'incluye',revealAt:8},
+  {id:'c10',from:'Pedido',to:'Envio',type:'composition',fromMul:'1',toMul:'0..1',label:'genera',revealAt:9},
+  {id:'c11',from:'Pedido',to:'Pago',type:'arrow',fromMul:'1',toMul:'1..*',label:'procesa',revealAt:10},
+  {id:'c12',from:'Envio',to:'Direccion',type:'arrow',label:'entrega',revealAt:9},
+  {id:'c13',from:'Producto',to:'Proveedor',type:'assoc',fromMul:'0..*',toMul:'0..*',label:'suministra',revealAt:6}
+];
+const EC_ST=[
+  {id:'Cliente',title:'Cliente',concept:'Entidad Principal',desc:'Todo sistema comienza con el usuario. El Cliente es el actor central que interactua con todas las funcionalidades, desde el registro hasta la compra final.',points:['Almacena credenciales de autenticacion','Gestiona multiples direcciones de envio','Mantiene historial de carritos y pedidos','Puede actualizar su perfil en cualquier momento'],rels:['1:N Direccion','1:N Carrito_compra','1:N Pedido']},
+  {id:'Direccion',title:'Direccion',concept:'Entidad de Soporte',desc:'Un cliente puede tener multiples direcciones. Esta separacion permite gestionar envios flexibles sin duplicar datos en cada pedido.',points:['Desacoplada del Cliente para reutilizacion','Utilizada tanto para facturacion como envio','Estructura completa: calle, ciudad, CP, pais','Un cliente puede no tener direcciones aun'],rels:['N:1 Cliente','1:0..1 Envio']},
+  {id:'Carrito_compra',title:'Carrito de Compra',concept:'Estado Temporal',desc:'Representa la intencion de compra antes de confirmar. Estado transitorio que puede convertirse en pedido o ser abandonado.',points:['Mantiene fecha de creacion para detectar abandono','Estados: activo, convertido, abandonado','Calcula totales en tiempo real','Se convierte en Pedido via convertirEnPedido()'],rels:['N:1 Cliente','1:N ItemCarrito']},
+  {id:'DetalleProducto',title:'DetalleProducto',concept:'Clase Abstracta',desc:'Define el contrato comun para cualquier elemento que referencie un producto con cantidad. Aplica el patron Template Method para el calculo de subtotales.',points:['No puede instanciarse directamente','Define atributos compartidos: cantidad, precioUnitario','calcularSubtotal() heredado por todas las subclases','Garantiza consistencia en todos los calculos'],rels:['Herencia: ItemCarrito','Herencia: LineaPedido']},
+  {id:'ItemCarrito',title:'Item Carrito',concept:'Implementacion Temporal',desc:'Instancia concreta de DetalleProducto especifica para el carrito de compra. Hereda el calculo de subtotales y agrega su propio identificador.',points:['Extiende DetalleProducto por herencia','Referencia a Producto con relacion N:1','Pertenece a un Carrito mediante composicion','Si el carrito se elimina, sus items desaparecen'],rels:['extends DetalleProducto','N:1 Producto','N:1 Carrito_compra']},
+  {id:'Producto',title:'Producto',concept:'Entidad Central',desc:'El catalogo de bienes disponibles. Referenciado por multiples partes del sistema pero mantiene su independencia de cualquier proceso.',points:['Gestiona inventario (stock) y precios unitarios','Verifica disponibilidad antes de permitir la venta','Referenciado por ItemCarrito y LineaPedido','Relacion N:M con Proveedores'],rels:['1:N ItemCarrito','1:N LineaPedido','N:M Proveedor']},
+  {id:'Proveedor',title:'Proveedor',concept:'Entidad Externa',desc:'Representa las entidades que suministran productos. La relacion N:M permite que un producto tenga multiples fuentes de abastecimiento.',points:['Independiente del ciclo de venta al cliente','Relacion N:M con Productos','Permite estrategias de abastecimiento alternativo','Datos de contacto para gestion de inventario'],rels:['N:M Producto']},
+  {id:'Pedido',title:'Pedido',concept:'Entidad de Negocio',desc:'Representa una compra confirmada. Es el nucleo del proceso de venta, gestionando el ciclo completo desde la confirmacion hasta la entrega.',points:['Estados: pendiente, pagado, enviado, entregado, cancelado','Contiene lineas de pedido mediante composicion','Puede generar un Envio (relacion 0..1, opcional)','Registra multiples pagos (parciales o cuotas)'],rels:['N:1 Cliente','1:N LineaPedido','1:0..1 Envio','1:N Pago']},
+  {id:'LineaPedido',title:'Linea de Pedido',concept:'Persistencia Definitiva',desc:'Version persistente del detalle una vez confirmado el pedido. Almacena el subtotal calculado para conservar el historico aunque el precio del producto cambie.',points:['Extiende DetalleProducto por herencia','Guarda subtotal como dato historico inmutable','Referencia a Producto con relacion N:1','Pertenece al Pedido mediante composicion'],rels:['extends DetalleProducto','N:1 Producto','N:1 Pedido']},
+  {id:'Envio',title:'Envio',concept:'Logistica',desc:'Gestiona la entrega fisica de los pedidos. Es opcional porque algunos pedidos pueden ser retiro en tienda o corresponder a servicios digitales.',points:['Relacion 0..1 con Pedido (completamente opcional)','Referencia la Direccion de entrega del cliente','Numero de seguimiento para trazabilidad externa','Registra la compania transportista utilizada'],rels:['0..1:1 Pedido','N:1 Direccion']},
+  {id:'Pago',title:'Pago',concept:'Transaccion Financiera',desc:'Registro de transacciones monetarias asociadas al pedido. Un pedido puede tener multiples pagos para soportar pagos parciales, en cuotas o reembolsos.',points:['Multiples pagos por pedido (relacion 1:N)','Estados: pendiente, completado, fallido, reembolsado','Metodos procesar() y reembolsar() encapsulan la logica','Monto independiente del total (pagos parciales)'],rels:['N:1 Pedido']}
+];
 
-window.nextStep = () => goToStep(currentStep+1);
-window.prevStep = () => goToStep(currentStep-1);
+/* ══ DATOS MAGIC FILM — posiciones rediseñadas en 3 filas ══ */
+const MF_CL={
+  // Fila superior — entidades de catalogo
+  Usuario:          {x:160, y:40,  attrs:['-int id','-String nombre_usuario','-String email','-String password_hash','-enum rol','-enum nivel_cinefilo','-boolean onboarding_completo'], methods:['+registrar() void','+login() boolean','+actualizarPerfil() void']},
+  Genero:           {x:620, y:40,  attrs:['-int id','-String nombre'], methods:[]},
+  Pelicula:         {x:1050,y:40,  attrs:['-int id','-int tmdb_id','-String titulo','-String director','-int anio','-String sinopsis','-JSON keywords','-enum tipo_analisis','-boolean tipo_forzado'], methods:['+buscar() List','+clasificar() enum']},
+  // Fila media — servicios y logica
+  ServicioTMDB:     {x:160, y:380, isService:true, attrs:['-String apiKey','-String baseUrl'], methods:['+buscarPelicula(titulo) JSON','+obtenerDetalles(id) JSON']},
+  Clasificador:     {x:560, y:380, isAbstract:true, attrs:['-String[] keywordsProfundo','-String[] keywordsEntret.','-int umbralScore'], methods:['+clasificar(p) enum','+calcularScore() int']},
+  Analisis:         {x:1000,y:380, attrs:['-int id','-enum tipo','-String modelo_ia','-enum estado','-boolean eliminado'], methods:['+generar() void','+regenerar() void','+eliminar() void']},
+  ServicioGemini:   {x:1380,y:380, isService:true, attrs:['-String apiKey','-String modelo'], methods:['+generarAnalisis(d) String','+construirPrompt() String']},
+  // Fila inferior — persistencia y trazabilidad
+  Favorito:         {x:60,  y:730, attrs:['-int id','-timestamp guardado_en'], methods:['+guardar() void','+eliminar() void']},
+  HistorialBusqueda:{x:310, y:730, attrs:['-int id','-String termino_buscado','-timestamp buscado_en'], methods:[]},
+  CapaAnalisis:     {x:700, y:730, attrs:['-int id','-enum modo','-enum nombre_capa','-String contenido','-int orden'], methods:['+renderizar() String']},
+  LogIA:            {x:1040,y:730, attrs:['-int id','-String prompt_usado','-int tokens_estimados','-int tiempo_ms'], methods:[]},
+  HistorialAdmin:   {x:1320,y:730, attrs:['-int id','-enum accion','-String entidad','-int entidad_id','-String detalle'], methods:['+registrar() void']}
+};
+const MF_CO=[
+  {id:'c1', from:'Usuario',to:'Genero',type:'assoc',fromMul:'N',toMul:'M',label:'prefiere',revealAt:1,purple:false},
+  {id:'c2', from:'Pelicula',to:'Genero',type:'assoc',fromMul:'N',toMul:'M',label:'clasifica',revealAt:2,purple:false},
+  {id:'c3', from:'ServicioTMDB',to:'Pelicula',type:'arrow',label:'provee datos',revealAt:4,purple:true},
+  {id:'c4', from:'Clasificador',to:'Pelicula',type:'arrow',label:'clasifica',revealAt:3,purple:false},
+  {id:'c5', from:'Clasificador',to:'ServicioTMDB',type:'arrow',label:'usa',revealAt:4,purple:false},
+  {id:'c6', from:'Pelicula',to:'Analisis',type:'arrow',fromMul:'1',toMul:'1',label:'genera',revealAt:6,purple:false},
+  {id:'c7', from:'ServicioGemini',to:'Analisis',type:'arrow',label:'genera',revealAt:6,purple:true},
+  {id:'c8', from:'Analisis',to:'CapaAnalisis',type:'composition',fromMul:'1',toMul:'1..*',label:'contiene',revealAt:7,purple:false},
+  {id:'c9', from:'Usuario',to:'Favorito',type:'arrow',fromMul:'1',toMul:'0..*',label:'guarda',revealAt:8,purple:false},
+  {id:'c10',from:'Pelicula',to:'Favorito',type:'arrow',fromMul:'1',toMul:'0..*',revealAt:8,purple:false},
+  {id:'c11',from:'Usuario',to:'HistorialBusqueda',type:'arrow',fromMul:'1',toMul:'0..*',label:'genera',revealAt:9,purple:false},
+  {id:'c12',from:'Pelicula',to:'HistorialBusqueda',type:'arrow',fromMul:'1',toMul:'0..*',revealAt:9,purple:false},
+  {id:'c13',from:'Analisis',to:'LogIA',type:'arrow',fromMul:'1',toMul:'0..*',label:'registra',revealAt:10,purple:false},
+  {id:'c14',from:'Usuario',to:'HistorialAdmin',type:'arrow',fromMul:'1',toMul:'0..*',label:'audita',revealAt:11,purple:false}
+];
+const MF_ST=[
+  {id:'Usuario',title:'Usuario',concept:'Entidad Principal',desc:'El actor central de Magic Film. Un Usuario puede ser Invitado, Registrado o Administrador. Su nivel cinefilo determina la profundidad del contenido que recibe.',points:['Tres roles: invitado, registrado, admin','Nivel cinefilo calculado segun actividad','Onboarding de generos en el primer acceso','Puede guardar favoritos y ver su historial'],rels:['N:M Genero','1:N Favorito','1:N HistorialBusqueda','1:N HistorialAdmin (admin)']},
+  {id:'Genero',title:'Genero',concept:'Catalogo de Clasificacion',desc:'Catalogo maestro de generos cinematograficos. Se relaciona en N:M tanto con Usuarios como con Peliculas.',points:['12 generos iniciales precargados','Un usuario selecciona sus generos en el onboarding','Una pelicula puede pertenecer a multiples generos','Base del motor de recomendaciones futuro'],rels:['N:M Usuario','N:M Pelicula']},
+  {id:'Pelicula',title:'Pelicula',concept:'Entidad Central del Catalogo',desc:'Representa una obra cinematografica. Sus datos provienen de TMDB y se enriquecen con la clasificacion interna.',points:['tmdb_id vincula con la API de TMDB','keywords JSON alimenta al Clasificador','tipo_analisis define el modo del analisis generado','tipo_forzado permite override manual del admin'],rels:['N:M Genero','1:1 Analisis','N:1 ServicioTMDB']},
+  {id:'Clasificador',title:'Clasificador',concept:'Logica de Clasificacion (Abstracta)',desc:'Clase abstracta que encapsula el algoritmo de clasificacion automatica. Analiza keywords de TMDB para decidir si una pelicula es ENTRETENIMIENTO o PROFUNDO.',points:['No instanciable directamente — aplica patron OCP','Calcula un score segun keywords del genero','Score >= umbral = PROFUNDO, de lo contrario ENTRETENIMIENTO','El admin puede sobreescribir su decision'],rels:['Clasifica: Pelicula','Usa: ServicioTMDB']},
+  {id:'ServicioTMDB',title:'ServicioTMDB',concept:'Servicio Externo — Datos',desc:'Capa de abstraccion sobre la API de TMDB. Centraliza todas las llamadas externas para obtener metadata de peliculas.',points:['API Key protegida en el backend, nunca expuesta','buscarPelicula() para busqueda por titulo','obtenerDetalles() para enriquecer la ficha completa','Resultado cacheado en BD para no repetir llamadas'],rels:['Provee datos a: Pelicula','Usado por: Clasificador']},
+  {id:'Analisis',title:'Analisis',concept:'Resultado de la IA',desc:'Almacena el resultado generado por Gemini para una pelicula. La relacion 1:1 con Pelicula garantiza que no haya duplicados.',points:['Estado pendiente, generando, completo o error','Maneja la naturaleza asincrona de Gemini','Eliminado logico (soft delete) para preservar historial','Unico por pelicula gracias a UNIQUE KEY en BD'],rels:['1:1 Pelicula','1:N CapaAnalisis','1:N LogIA']},
+  {id:'ServicioGemini',title:'ServicioGemini',concept:'Servicio Externo — IA Generativa',desc:'Integracion con Google Gemini 1.5 Flash. Recibe los datos de la pelicula y construye un prompt especializado segun el tipo detectado.',points:['Prompt diferente segun tipo de pelicula','El analisis se guarda en BD para no repetir el costo','Si falla, el estado de Analisis queda en error','Tokens y tiempo se registran en LogIA'],rels:['Genera: Analisis']},
+  {id:'CapaAnalisis',title:'CapaAnalisis',concept:'Estructura del Analisis',desc:'Cada capa es una seccion tematica del analisis. Permite renderizar el contenido por partes y adaptar que capas se muestran segun el tipo de pelicula.',points:['Entretenimiento: resumen, momentos, easter_eggs, curiosidades','Profundo: narrativa, simbolismo, contexto, tecnica, conclusion','Campo modo evita mostrar capas incorrectas por tipo','Campo orden controla la secuencia de visualizacion'],rels:['N:1 Analisis (composicion)']},
+  {id:'Favorito',title:'Favorito',concept:'Interaccion del Usuario',desc:'Tabla de union entre Usuario y Pelicula. La restriccion UNIQUE sobre (usuario_id, pelicula_id) evita duplicados.',points:['Resuelve la relacion N:M entre Usuario y Pelicula','Registra timestamp de cuando se guardo','Base de las recomendaciones personalizadas futuras','Cascade delete si el usuario o la pelicula se eliminan'],rels:['N:1 Usuario','N:1 Pelicula']},
+  {id:'HistorialBusqueda',title:'HistorialBusqueda',concept:'Trazabilidad del Usuario',desc:'Registra cada termino buscado por un usuario y, si hubo resultado, la pelicula asociada. Permite analizar patrones de uso.',points:['termino_buscado guarda el texto literal','pelicula_id puede ser NULL si no hubo resultado','ON DELETE SET NULL: el log sobrevive si se borra la pelicula','Alimentara el motor de tendencias y sugerencias'],rels:['N:1 Usuario','N:0..1 Pelicula']},
+  {id:'LogIA',title:'LogIA',concept:'Trazabilidad de la IA',desc:'Registro tecnico de cada llamada a Gemini. Fundamental para controlar costos y diagnosticar errores de generacion.',points:['prompt_usado para reproducir y depurar analisis fallidos','tokens_estimados para calcular el costo acumulado','tiempo_ms para detectar timeouts y optimizar prompts','ON DELETE SET NULL: el log sobrevive si se borra el analisis'],rels:['N:1 Analisis']},
+  {id:'HistorialAdmin',title:'HistorialAdmin',concept:'Auditoria del Sistema',desc:'Tabla de auditoria que registra cada accion administrativa. Garantiza trazabilidad completa cubriendo el requisito RF-006.',points:['Acciones: agregar, modificar, eliminar, regenerar_ia','entidad identifica la tabla afectada','entidad_id referencia el registro especifico modificado','Solo usuarios con rol admin generan entradas aqui'],rels:['N:1 Usuario (admin)']}
+];
 
-/* ══════════════════════════════════════════════
-   MODE TOGGLE
-══════════════════════════════════════════════ */
-function setMode(m) {
-  mode = m;
-  const pres = m === 'presentation';
-  document.getElementById('btnPres').classList.toggle('on',  pres);
-  document.getElementById('btnFree').classList.toggle('on', !pres);
-  document.getElementById('panel').classList.toggle('hidden', !pres);
-  document.getElementById('controls').style.opacity = pres ? '1' : '0.5';
-  document.getElementById('viewport').classList.toggle('pannable', !pres);
-
-  if (!pres) {
-    updateDiagram();
-    scale = 0.68; tx = 30; ty = 30;
-    applyTransform(true);
-  } else {
-    updateDiagram();
-    centerOnClass(STEPS[currentStep].id, true);
-  }
-}
-window.setMode = setMode;
-
-/* ══════════════════════════════════════════════
-   PAN & ZOOM (free mode)
-══════════════════════════════════════════════ */
-let panning = false, px0=0, py0=0, tx0=0, ty0=0;
-
-document.getElementById('viewport').addEventListener('mousedown', e => {
-  if (mode !== 'free') return;
-  panning = true;
-  px0 = e.clientX; py0 = e.clientY; tx0 = tx; ty0 = ty;
-  document.getElementById('viewport').classList.add('panning');
+/* ══ INICIALIZAR ══ */
+const ecE = makeEngine({
+  p:'ec', canvasId:'cv-ec', svgId:'svg-ec', vpId:'vp-ec',
+  classes:EC_CL, conns:EC_CO, steps:EC_ST,
+  panelId:'panel-ec', numId:'ec-num', conceptId:'ec-concept', stepofId:'ec-stepof',
+  pcId:'ec-pc', titleId:'ec-title', descId:'ec-desc', pointsId:'ec-points',
+  relareaId:'ec-relarea', relchipsId:'ec-relchips',
+  countId:'ec-count', cnameId:'ec-cname', fillId:'ec-fill',
+  prevId:'ec-prev', nextId:'ec-next', bpresId:'ec-bpres', bfreeId:'ec-bfree',
+  initSc:0.72, initTx:80, initTy:40,
+  arrMark:'ec-arr', diaMark:'ec-dia', inhMark:'ec-inh', purMark:'ec-arr'
 });
-document.addEventListener('mousemove', e => {
-  if (!panning) return;
-  tx = tx0 + (e.clientX - px0);
-  ty = ty0 + (e.clientY - py0);
-  applyTransform(false);
+const mfE = makeEngine({
+  p:'mf', canvasId:'cv-mf', svgId:'svg-mf', vpId:'vp-mf',
+  classes:MF_CL, conns:MF_CO, steps:MF_ST,
+  panelId:'panel-mf', numId:'mf-num', conceptId:'mf-concept', stepofId:'mf-stepof',
+  pcId:'mf-pc', titleId:'mf-title', descId:'mf-desc', pointsId:'mf-points',
+  relareaId:'mf-relarea', relchipsId:'mf-relchips',
+  countId:'mf-count', cnameId:'mf-cname', fillId:'mf-fill',
+  prevId:'mf-prev', nextId:'mf-next', bpresId:'mf-bpres', bfreeId:'mf-bfree',
+  initSc:0.58, initTx:60, initTy:35,
+  arrMark:'mf-arr', diaMark:'mf-dia', inhMark:'mf-arr', purMark:'mf-pur'
 });
-document.addEventListener('mouseup', () => {
-  panning = false;
-  document.getElementById('viewport').classList.remove('panning');
-});
-document.getElementById('viewport').addEventListener('wheel', e => {
-  if (mode !== 'free') return;
-  e.preventDefault();
-  const factor = e.deltaY > 0 ? 0.9 : 1.1;
-  const ns = Math.min(Math.max(scale*factor, 0.2), 3);
-  const r = document.getElementById('viewport').getBoundingClientRect();
-  const mx = e.clientX - r.left, my = e.clientY - r.top;
-  tx = mx - (mx - tx)*(ns/scale);
-  ty = my - (my - ty)*(ns/scale);
-  scale = ns;
-  applyTransform(false);
-}, {passive:false});
-
-/* ══════════════════════════════════════════════
-   KEYBOARD
-══════════════════════════════════════════════ */
-document.addEventListener('keydown', e => {
-  if (mode !== 'presentation') return;
-  if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); nextStep(); }
-  else if (e.key === 'ArrowLeft') { e.preventDefault(); prevStep(); }
-  else if (e.key === 'Escape') setMode('free');
-});
-
-/* ══════════════════════════════════════════════
-   INIT
-══════════════════════════════════════════════ */
-renderClasses();
-applyTransform(false);
-
-setTimeout(() => {
-  measureBoxes();
-  drawConnections();
-  goToStep(0, false);
-}, 80);
+ecE.init();
+mfE.init();
 </script>
 </body>
 </html>
